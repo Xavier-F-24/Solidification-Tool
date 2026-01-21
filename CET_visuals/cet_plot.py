@@ -2,12 +2,12 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-def plot_cet(cet_curves):
+def plot_cet(cet_results):
     """
     Plot CET G-V curves
     """
 
-    for phi, data in cet_curves.items():
+    for phi, data in cet_results.items():
         G = data["G"]
         V = data["V"]
 

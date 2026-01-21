@@ -1,7 +1,8 @@
 import matplotlib.pyplot as plt
 
 def dendritic_stability_edges(G_out, V_planar, V_dend):
-    plt.figure()#figsize=(6,5))
+    
+    plt.figure()
 
     plt.loglog(G_out, V_planar) #, label="Planar -> Cellular")
     plt.loglog(G_out, V_dend) #, label="Cellular -> Dendritic")

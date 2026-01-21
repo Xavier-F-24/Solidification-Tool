@@ -27,15 +27,15 @@ def solve_cet(inputs, V_min, V_max, fit_ims_results):
     # --------------------------------------------------
     # Store results
     # --------------------------------------------------
-    cet_curves = {}
+    cet_results = {}
 
     for phi in phi_list:
         G = np.full_like(V_grid, np.nan)
         G = (1 / (n + 1)) * (( (-4*np.pi*N0) / (3 * np.log(1 - phi)) )**(1 / 3) ) * DeltaT * (1 - (DeltaTN ** (n + 1)) / (DeltaT ** (n + 1)) )
 
-        cet_curves[phi] = {
+        cet_results[phi] = {
             "V": V_grid,
             "G": G
         }
 
-    return cet_curves
+    return cet_results

@@ -57,7 +57,18 @@ class SolidificationInputs:
     N0 : float # innoculant particles concentration [1/m^3]
     DeltaTN : float # the temperature decrease from a particle (?) [K]
 
-def run_solver():
+@dataclass
+class SimulationResults:
+    V: np.ndarray
+    G: np.ndarray
+    ims: dict
+    stability: dict
+    pdas: dict
+    sdas: dict
+    cet: dict
+
+
+def get_inputs():
     inputs = SolidificationInputs(
         k_l=30.5,
         rho_s=7850,
@@ -78,64 +89,133 @@ def run_solver():
         N0 = 1e12,
         DeltaTN = 2.5
         )
+    
+    return inputs
 
+def get_heat_transfer(inputs):
     # --------------------------------------------------
     # Solve for heat transfer model: eventually choose
     # --------------------------------------------------
     V, G = solve_steady_state_directional(inputs)
 
+    return(V,G)
+
+def show_heat_transfer(V, G):
     # --------------------------------------------------
     # Display heat transfer results
     # --------------------------------------------------
-    fig1 = plot_G_V(V, G)
+    fig = plot_G_V(V, G)
 
+    return(fig)
+
+def get_ims (inputs):
     # --------------------------------------------------
     # Solve for IMS model: nice
     # --------------------------------------------------
     ims_results = solve_ims(inputs)
 
+    return(ims_results)
+
+def show_ims(ims_results, Wanted_G):
     # --------------------------------------------------
     # Display IMS results
     # --------------------------------------------------
-    fig2 = plot_V_R(ims_results, 1e5)          # INPUT DESIRED THERMAL GRADIENT G
-    G_out, V_planar, V_dend = extract_stability_boundaries(ims_results)
-    # this needs to go directly in front of PDAS and SDAS!!
-    fig3 = dendritic_stability_edges(G_out, V_planar, V_dend)
+    fig = plot_V_R(ims_results, Wanted_G)          # INPUT DESIRED THERMAL GRADIENT G
+    return(fig)
 
+def get_stability_boundaries(ims_results):
+
+    G_out, V_planar, V_dend = extract_stability_boundaries(ims_results)
+
+    return(G_out, V_planar, V_dend)
+
+def show_stability_region(G_out, V_planar, V_dend):
+    # this needs to go directly in front of PDAS and SDAS!!
+    fig = dendritic_stability_edges(G_out, V_planar, V_dend)
+
+    return(fig)
+
+def get_ims_power_laws(ims_results, Wanted_G):
+
+    fit_ims_results = fit_ims_power_laws(ims_results, Wanted_G)
+
+    return(fit_ims_results)
+
+def get_pdas(inputs, V_planar, V_dend, fit_ims_results):
     # --------------------------------------------------
     # Solve for PDAS model
     # --------------------------------------------------
-    fit_ims_results = fit_ims_power_laws(ims_results, 1e5)
     pdas_results = solve_pdas(inputs, V_min = np.min(V_planar), V_max = np.max(V_dend), fit_ims_results = fit_ims_results)
-    fig4 = plot_pdas(pdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend)
-    # show the fits comparatively to V that exist
-    fig5 = plot_fits(ims_results, fit_ims_results, 1e5)
+    
+    return(pdas_results)
 
+def show_pdas(pdas_results, G_out, V_planar, V_dend):
+    fi = show_stability_region(G_out, V_planar, V_dend)
+    fig = plot_pdas(pdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend)
+
+    return(fig)
+
+def show_power_law_fits(ims_results, fit_ims_results, Wanted_G):
+    # show the fits comparatively to V that exist
+    fig5 = plot_fits(ims_results, fit_ims_results, Wanted_G)
+    return(fig5)
+
+def get_sdas(inputs, V_planar, V_dend, G_out):
     # --------------------------------------------------
     # Solve for SDAS model
     # --------------------------------------------------
     sdas_results = solve_sdas(inputs, V_min = np.min(V_planar), V_max = np.max(V_dend))
-    fig6 = dendritic_stability_edges(G_out, V_planar, V_dend)
-    fig7 = plot_sdas(sdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend)
+    
+    return(sdas_results)
 
-    fig8 = dendritic_stability_edges(G_out, V_planar, V_dend)
-    fig9 = plot_pdas(pdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend)
-    fig10 = plot_sdas(sdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend)
+def show_sdas(sdas_results, G_out, V_planar, V_dend):
+    fi = show_stability_region(G_out, V_planar, V_dend)
+    fig = plot_sdas(sdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend)
 
+    return(fig)
+
+def show_pdas_sdas(pdas_results, sdas_results, G_out, V_planar, V_dend):
+    f = show_stability_region(G_out, V_planar, V_dend)
+    fi = plot_pdas(pdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend)
+    fig = plot_sdas(sdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend)
+
+    return(fig)
+
+def get_cet(inputs, fit_ims_results, V_planar, V_dend):
     # --------------------------------------------------
     # Solve for CET model
     # --------------------------------------------------
-    cet_curves = solve_cet(inputs, fit_ims_results = fit_ims_results, V_min = np.min(V_planar), V_max = np.max(V_dend))
+    cet_results = solve_cet(inputs, fit_ims_results = fit_ims_results, V_min = np.min(V_planar), V_max = np.max(V_dend))
 
-    fig11 = dendritic_stability_edges(G_out, V_planar, V_dend)
-    fig12 = plot_cet(cet_curves)
+    return(cet_results)
+
+def show_cet(cet_results, V_planar, V_dend, G_out):
+    fi = show_stability_region(G_out, V_planar, V_dend)
+    fig = plot_cet(cet_results)
+    return(fig)
+
+
+def run_all():
+    Wanted_G = 1e5
+
+    inputs = get_inputs()
+    V,G = get_heat_transfer(inputs)
+    ims_results = get_ims(inputs)
+    (G_out, V_planar, V_dend) = extract_stability_boundaries(ims_results)
+    fit_ims_results = get_ims_power_laws(ims_results, Wanted_G)
+    pdas_results = get_pdas(inputs, V_planar, V_dend, fit_ims_results)
+    sdas_results = get_sdas(inputs, V_planar, V_dend, G_out)
+    cet_results = get_cet(inputs, fit_ims_results, V_planar, V_dend)
+
+    show_heat_transfer(V,G)
+    show_ims(ims_results, Wanted_G)
+    show_power_law_fits(ims_results, fit_ims_results, Wanted_G)
+    show_pdas_sdas(pdas_results, sdas_results, G_out, V_planar, V_dend)
+    show_cet(cet_results, V_planar, V_dend, G_out)
 
     plt.show()
 
 
-
 if __name__ == "__main__":
-    run_solver()
-    # run_instantaneous_point_heat_source()
-    # run_instantaneous_moving_point_heat_source()
-    # run_semi_infinite_slab_casting
+    run_all()
+    
