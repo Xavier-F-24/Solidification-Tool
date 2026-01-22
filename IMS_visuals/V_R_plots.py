@@ -21,14 +21,14 @@ def plot_V_R(ims_results, Wanted_G):
     # --------------------------------------------------
     
     plt.figure()
-    for i in range(len(G)):
-        plt.loglog(V_minus[i][0], R_minus[i], label="Negatives")
-        plt.loglog(V_plus[i][0], R_plus[i], label="Positives")
-        plt.xlabel("Velocity (m/s)")
-        plt.ylabel("Tip radius (m)")
-        plt.title(f"Thermal Gradient {G[i]:.1e}")
-        #plt.legend()
-        plt.grid(True)
+    #for i in range(len(G)):
+    plt.loglog(V_minus[idx][0], R_minus[idx], label="Negatives")
+    plt.loglog(V_plus[idx][0], R_plus[idx], label="Positives")
+    plt.xlabel("Velocity (m/s)")
+    plt.ylabel("Tip radius (m)")
+    plt.title(f"Thermal Gradient {G[idx]:.1e}")
+    #plt.legend()
+    plt.grid(True)
 
     # --------------------------------------------------
     # Plotting V versus solute undercooling
