@@ -9,20 +9,27 @@ def plot_fits(ims_results, fit_ims_results, Wanted_G):
     R = ims_results["R+"]
     Total_undercooling = ims_results["Total_undercooling"]
 
-    alpha1, beta1, alpha2, beta2 = fit_ims_results
+    alpha1 = fit_ims_results["alpha1"]
+    beta1 = fit_ims_results["beta1"]
+    alpha2 = fit_ims_results["alpha2"]
+    beta2 = fit_ims_results["beta2"]
+    R2_radius = fit_ims_results["R2_radius"]
+    R2_undercooling = fit_ims_results["R2_undercooling"]
 
     idx = np.argmin(np.abs(G - Wanted_G))
 
     plt.figure()
-    plt.loglog(V[idx][0], R[idx], label="True")
-    plt.loglog(V[idx][0], alpha1 * V[idx][0]**beta1 , label="Fit")
+    plt.loglog(V[idx][0], R[idx], label = "Calculated")
+    plt.loglog(V[idx][0], alpha1 * V[idx][0]**beta1 , label = f"Fit alpha: {alpha1:.3e}, beta: {beta1:.3e}, R-squared: {R2_radius:.3f}")
     plt.xlabel("Velocity (m/s)")
     plt.ylabel("Tip radius (m)")
+    plt.title(f"Velocity Power Law fit for Radius")
     plt.legend()
 
     plt.figure()
-    plt.semilogx(V[idx][0], Total_undercooling[idx], label="True")
-    plt.semilogx(V[idx][0], alpha2 * V[idx][0]**beta2 , label="Fit")
+    plt.semilogx(V[idx][0], Total_undercooling[idx], label = "Calculated")
+    plt.semilogx(V[idx][0], alpha2 * V[idx][0]**beta2 , label = f"Fit alpha: {alpha2:.3e}, beta: {beta2:.3e}, R-squared: {R2_undercooling:.3f}")
     plt.xlabel("Velocity (m/s)")
     plt.ylabel("Tip undercooling (K)")
+    plt.title(f"Velocity Power Law fit for Undercooling")
     plt.legend()

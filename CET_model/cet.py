@@ -15,8 +15,11 @@ def solve_cet(inputs, V_min, V_max, fit_ims_results):
     N0 = inputs.N0
     DeltaTN = inputs.DeltaTN
 
-    alpha1, beta1, alpha2, beta2 = fit_ims_results #alpha, beta2 = for undercooling
-
+    alpha1 = fit_ims_results["alpha1"]
+    beta1 = fit_ims_results["beta1"]
+    alpha2 = fit_ims_results["alpha2"]
+    beta2 = fit_ims_results["beta2"]
+    
     # --------------------------------------------------
     # Lets solve
     # --------------------------------------------------

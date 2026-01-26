@@ -8,7 +8,7 @@ def solve_sdas(inputs, V_min, V_max):
     # --------------------------------------------------
     # Prescribed PDAS values (meters)
     # --------------------------------------------------
-    lambda_list = np.logspace(-6, 6, 12)  # 1 µm → 1 mm (adjust freely)
+    lambda_list = np.logspace(-6, 6, 13)  # 1 µm → 1 mm (adjust freely)
 
     # --------------------------------------------------
     # Velocity grid (physically bounded)

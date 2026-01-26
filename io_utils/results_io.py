@@ -10,6 +10,7 @@ def save_results(results, run_dir):
                         V = results.V,
                         G = results.G,
                         ims = results.ims,
+                        fit_ims = results.fit_ims,
                         stability = results.stability,
                         pdas = results.pdas,
                         sdas = results.sdas,
@@ -42,6 +43,7 @@ def load_results(filepath):
         V = data["V"],
         G = data["G"],
         ims = data["ims"].item(), # GPT help - dicts are stored as 0 dimensional arrays - wild
+        fit_ims = data["fit_ims"].item(), 
         stability = data["stability"].item(),
         pdas = data["pdas"].item(),
         sdas = data["sdas"].item(),

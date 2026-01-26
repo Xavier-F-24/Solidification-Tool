@@ -8,12 +8,15 @@ def solve_pdas(inputs, V_min, V_max, fit_ims_results):
     # --------------------------------------------------
     # Prescribed PDAS values (meters)
     # --------------------------------------------------
-    lambda_list = np.logspace(-6, 6, 12)  # 1 µm → 1 mm (adjust freely)
+    lambda_list = np.logspace(-6, 6, 13)  # 1 µm → 1 mm (adjust freely)
 
     # --------------------------------------------------
     # Fit IMS power laws at desired G
     # --------------------------------------------------
-    alpha1, beta1, alpha2, beta2 = fit_ims_results
+    alpha1 = fit_ims_results["alpha1"]
+    beta1 = fit_ims_results["beta1"]
+    alpha2 = fit_ims_results["alpha2"]
+    beta2 = fit_ims_results["beta2"]
 
     # --------------------------------------------------
     # Velocity grid (physically bounded)
