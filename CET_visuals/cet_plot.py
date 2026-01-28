@@ -2,10 +2,23 @@ import matplotlib.pyplot as plt
 
 import numpy as np
 
-def plot_cet(cet_results):
+from scipy.interpolate import interp1d
+
+def spacing_to_color(spacings):
+    unique = sorted(set(spacings))
+
+    cmap = plt.get_cmap("turbo")
+    colors = cmap(np.linspace(0.1, 0.9, len(unique)))
+
+    return {lam_um: color for lam_um, color in zip(unique, colors)}
+
+def plot_cet(cet_results, phi_list, G_out, V_max_env, V_min_env):
     """
     Plot CET G-V curves
     """
+
+    # Map values to colors using Turbo colormap
+    cet_colors = spacing_to_color(phi_list)
 
     for phi, data in cet_results.items():
         G = data["G"]
@@ -16,17 +29,27 @@ def plot_cet(cet_results):
         else:
             label = ""
 
+        threshold = np.min(G_out)
+        #print(G)
+        #G[G < 1e-4] = np.nan
+        #print(G)
+
         plt.loglog(
-            G,
-            V,
-            label = label
+            G, #_trim,
+            V, #_trim,
+            label = label,
+            color = cet_colors[phi],
+            #marker = "*",
+            linestyle = "-",
+            linewidth = 2
         )
 
     plt.xlabel("Thermal Gradient G (K/m)")
     plt.ylabel("Velocity V (m/s)")
     plt.title("CET Map")
 
-    plt.grid(True, which="both", ls="--", alpha=0.4)
+    plt.grid(True)
     plt.legend()
     plt.tight_layout()
 
+    #return(fig)

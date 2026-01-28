@@ -1,3 +1,7 @@
+#----------------------------------------
+#  CURRENT VERSION: V 0.3
+#----------------------------------------
+
 import matplotlib
 #matplotlib.use("Agg")
 
@@ -48,7 +52,7 @@ def run_simulation():
     fit_ims_results = get_ims_power_laws(ims_results, Wanted_G)
     pdas_results = get_pdas(inputs, V_planar, V_dend, fit_ims_results)
     sdas_results = get_sdas(inputs, V_planar, V_dend, G_out)
-    cet_results  = get_cet(inputs, fit_ims_results, V_planar, V_dend)
+    cet_results, phi_list  = get_cet(inputs, fit_ims_results, V_planar, V_dend, G_out)
 
     results =  SimulationResults(
         inputs = inputs.to_dict(),
@@ -64,28 +68,33 @@ def run_simulation():
         },
         pdas = pdas_results,
         sdas = sdas_results,
-        cet = cet_results
+        cet = cet_results,
+        phi_list = phi_list
         )
 
     return(results)
 
 
 def show_all(results, Wanted_G = 1e5):
+    fig_size = (8,6)
 
     show_heat_transfer(
         results.V, 
-        results.G
+        results.G,
+        fig_size
         )
     
     show_ims(
         results.ims, 
-        Wanted_G
+        Wanted_G,
+        fig_size
         )
     
     show_power_law_fits(
         results.ims, 
         fit_ims_power_laws(results.ims, Wanted_G),
-        Wanted_G
+        Wanted_G,
+        fig_size
         )
     
     show_pdas_sdas(
@@ -93,40 +102,48 @@ def show_all(results, Wanted_G = 1e5):
         results.sdas,
         results.stability["G_out"],
         results.stability["V_planar"],
-        results.stability["V_dend"]
+        results.stability["V_dend"],
+        fig_size
         )
 
     show_cet(
         results.cet,
         results.stability["V_planar"],
         results.stability["V_dend"],
-        results.stability["G_out"]
+        results.stability["G_out"],
+        fig_size,
+        results.phi_list
         )
 
     plt.show()
 
 
 def save_all_figures(results, run_dir, Wanted_G = 1e5):
+    fig_size = (8,6)
 
-    fig = show_heat_transfer(results.V, results.G)
+    fig = show_heat_transfer(results.V, results.G, fig_size)
     save_figure(fig, run_dir, "heat_transfer")
 
-    fig = show_ims(results.ims, Wanted_G)
-    save_figure(fig, run_dir, "ims")
+    fig_radius, fig_cool = show_ims(results.ims, Wanted_G, fig_size)
+    save_figure(fig_radius, run_dir, "ims_radius")
+    save_figure(fig_cool, run_dir, "ims_cool")
 
-    fig = show_power_law_fits(
+    fig_fit_radius, fig_fit_cool = show_power_law_fits(
         results.ims,
         fit_ims_power_laws(results.ims, Wanted_G),
-        Wanted_G
+        Wanted_G,
+        fig_size
     )
-    save_figure(fig, run_dir, "ims_fits")
+    save_figure(fig_fit_radius, run_dir, "ims_fits_radius")
+    save_figure(fig_fit_cool, run_dir, "ims_fits_cool")
 
     fig = show_pdas_sdas(
         results.pdas,
         results.sdas,
         results.stability["G_out"],
         results.stability["V_planar"],
-        results.stability["V_dend"]
+        results.stability["V_dend"],
+        fig_size
     )
     save_figure(fig, run_dir, "pdas_sdas")
 
@@ -134,7 +151,9 @@ def save_all_figures(results, run_dir, Wanted_G = 1e5):
         results.cet,
         results.stability["V_planar"],
         results.stability["V_dend"],
-        results.stability["G_out"]
+        results.stability["G_out"],
+        fig_size,
+        results.phi_list
     )
     save_figure(fig, run_dir, "cet")
 
@@ -146,9 +165,13 @@ if __name__ == "__main__":
     #run_dir = create_run_folder("baseline_class_alloy")
 
     results = run_simulation()
-    show_all(results)
+
     #save_results(results, run_dir)
+
+    show_all(results)
+
     #save_all_figures(results, run_dir)
+    
 
     #results = load_results("results/baseline_class_alloy.npz")
     #show_all(results)

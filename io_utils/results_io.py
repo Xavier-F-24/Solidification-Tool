@@ -14,7 +14,8 @@ def save_results(results, run_dir):
                         stability = results.stability,
                         pdas = results.pdas,
                         sdas = results.sdas,
-                        cet = results.cet)
+                        cet = results.cet,
+                        phi_list = results.phi_list)
 
     # Save inputs + metadata as JSON
     with open(run_dir / "inputs.json", "w") as f:
@@ -33,7 +34,7 @@ def load_results(filepath):
     """
     Load SimulationResults from a .npz file.
     """
-    data = np.load(filepath, allow_pickle=True)
+    data = np.load(filepath, allow_pickle = True)
 
     from main import SimulationResults  # local import avoids circular issues
 
@@ -48,6 +49,7 @@ def load_results(filepath):
         pdas = data["pdas"].item(),
         sdas = data["sdas"].item(),
         cet = data["cet"].item(),
+        phi_list = data["phi_list"]
     )
 
 """

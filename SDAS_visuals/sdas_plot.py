@@ -38,7 +38,7 @@ def plot_sdas(sdas_curves, G_env, V_max_env, V_min_env, color_map, dry_run):
         shown_spacings.add(lam_um)
 
         if dry_run == False:
-            
+
             color = color_map[lam_um]
             plt.loglog(
                 G_trim,

@@ -18,3 +18,4 @@ class SimulationResults:
     pdas: dict
     sdas: dict
     cet: dict
+    phi_list: list
