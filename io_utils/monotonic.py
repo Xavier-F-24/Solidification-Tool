@@ -2,25 +2,11 @@ import numpy as np
 
 def monotonic_display_xy(x, y):
     """
-    Sort by x and enforce monotonic non-decreasing y for display.
-
-    Parameters
-    ----------
-    x : array-like
-        Independent variable (e.g. V)
-    y : array-like
-        Dependent variable (e.g. DeltaT)
-
-    Returns
-    -------
-    x_sorted : ndarray
-    y_mono   : ndarray
+    fixing the ims back-hooks by removing the entries after the maximum velocity
     """
 
     x = np.asarray(x)
     y = np.asarray(y)
-
-    print(len(x))
 
     mask = np.isfinite(x)
 

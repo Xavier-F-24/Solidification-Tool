@@ -29,10 +29,8 @@ def plot_cet(cet_results, phi_list, G_out, V_max_env, V_min_env):
         else:
             label = ""
 
-        threshold = np.min(G_out)
-        #print(G)
-        #G[G < 1e-4] = np.nan
-        #print(G)
+        G = np.concatenate([ [np.min(G_out)], G ])
+        V = np.concatenate([ [V[0]], V])
 
         plt.loglog(
             G, #_trim,

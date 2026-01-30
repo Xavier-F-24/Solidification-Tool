@@ -35,7 +35,7 @@ def solve_ims(inputs):
     Gamma = float(inputs.Gamma)
 
     N_g = 100
-    G = np.logspace(-6, 12, N_g)                     # (n_G,)
+    G = np.logspace(-6, 9, N_g)                     # (n_G,)
     G = G[:, None, None]                         # (n_G, 1, 1)
 
     n_solute = C_0.shape[0]
@@ -43,7 +43,9 @@ def solve_ims(inputs):
     # --------------------------------------------------
     # Peclet construction (solute-scaled)
     # --------------------------------------------------
-    N_Pe = 200
+
+    # NOW, Jan 27, we want to have the peclet numbers scaled to shorter ranges (logspace start and end) so that we get maximum information
+    N_Pe = 3000
     P = np.logspace(-9, 9, N_Pe)                 # (n_Pe,)
 
     D_ref = D[0, 0]

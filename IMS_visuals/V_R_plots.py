@@ -11,7 +11,7 @@ def spacing_to_color(spacings):
 
     return {lam_um: color for lam_um, color in zip(unique, colors)}
 
-def plot_V_R(ims_results, Wanted_G, fig_size):
+def plot_V_R(ims_results, Wanted_G, fig_size, plot_range = False, G_range = (1e-9, 1e9)):
     # --------------------------------------------------
     # Unpack inputs
     # --------------------------------------------------
@@ -31,14 +31,32 @@ def plot_V_R(ims_results, Wanted_G, fig_size):
     # --------------------------------------------------
     
     fig_radius = plt.figure(figsize = fig_size)
-    #for i in range(len(G)):
-    plt.loglog(V_minus[idx][0], R_minus[idx], label="Negatives", color = "green", linestyle = "--", linewidth = 2)
-    plt.loglog(V_plus[idx][0], R_plus[idx], label="Positives", color = "blue", linestyle = "-", linewidth = 2)
-    plt.xlabel("Velocity (m/s)")
-    plt.ylabel("Tip radius (m)")
-    plt.title(f"Thermal Gradient {G[idx]:.1e}")
-    plt.legend()
-    plt.grid(True)
+
+    if (plot_range == True) :
+        
+        idx_low = np.argmin(np.abs(G - G_range[0]))
+        idx_high = np.argmin(np.abs(G - G_range[1]))
+
+        G_mask = G[idx_low : idx_high]
+
+        for ix in range(len(G_mask)):
+
+        #ix = 0
+            plt.loglog(V_minus[ix + idx_low][0], R_minus[ix + idx_low], label="Negatives", color = "green", linestyle = "--", linewidth = 2)
+            plt.loglog(V_plus[ix + idx_low][0], R_plus[ix + idx_low], label="Positives", color = "blue", linestyle = "-", linewidth = 2)
+            plt.xlabel("Velocity (m/s)")
+            plt.ylabel("Tip radius (m)")
+            plt.title(f"Thermal Gradient {G[ix + idx_low]:.1e}")
+            #plt.legend()
+            plt.grid(True)
+    else:
+        plt.loglog(V_minus[idx][0], R_minus[idx], label="Negatives", color = "green", linestyle = "--", linewidth = 2)
+        plt.loglog(V_plus[idx][0], R_plus[idx], label="Positives", color = "blue", linestyle = "-", linewidth = 2)
+        plt.xlabel("Velocity (m/s)")
+        plt.ylabel("Tip radius (m)")
+        plt.title(f"Thermal Gradient {G[idx]:.1e}")
+        #plt.legend()
+        plt.grid(True)
 
     # --------------------------------------------------
     # Plotting V versus solute undercooling

@@ -114,7 +114,7 @@ def show_all(results, Wanted_G = 1e5):
         fig_size,
         results.phi_list
         )
-
+    
     plt.show()
 
 
@@ -164,17 +164,17 @@ if __name__ == "__main__":
 
     #run_dir = create_run_folder("baseline_class_alloy")
 
-    results = run_simulation()
+    #results = run_simulation()
 
     #save_results(results, run_dir)
 
-    show_all(results)
+    #show_all(results)
 
     #save_all_figures(results, run_dir)
     
 
-    #results = load_results("results/baseline_class_alloy.npz")
-    #show_all(results)
+    results = load_results("C:/Users/xavie/Desktop/solidification_tool\results\2026-01-28_21-24-14_baseline_class_alloy\run.npz")
+    show_all(results)
 
 
 
