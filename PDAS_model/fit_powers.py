@@ -1,6 +1,6 @@
 import numpy as np
 
-from io_utils.analysis_utils import r_squared
+from solidification_tool.io_utils.analysis_utils import r_squared
 
 def fit_ims_power_laws(ims_results, Wanted_G):
 

@@ -4,10 +4,7 @@ Ivantsov Multiple Solutes undercooling model
 
 import numpy as np
 
-from IMS_model.ivantsov import Ivantsov
-
-import numpy as np
-from IMS_model.ivantsov import Ivantsov
+from solidification_tool.IMS_model.ivantsov import Ivantsov
 
 
 def solve_ims(inputs):

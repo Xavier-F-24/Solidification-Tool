@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 
-from io_utils.monotonic import monotonic_display_xy
+from solidification_tool.io_utils.monotonic import monotonic_display_xy
 
 def spacing_to_color(spacings):
     unique = sorted(set(spacings))
@@ -15,6 +15,8 @@ def plot_V_R(ims_results, Wanted_G, fig_size, plot_range = False, G_range = (1e-
     # --------------------------------------------------
     # Unpack inputs
     # --------------------------------------------------
+    print("plot_V_R: start")
+
     G = ims_results["G"]
     V_minus = ims_results["V-"]
     V_plus = ims_results["V+"]
@@ -24,13 +26,17 @@ def plot_V_R(ims_results, Wanted_G, fig_size, plot_range = False, G_range = (1e-
     Solute_undercooling = ims_results["Solute_undercooling"]
     Curvature_undercooling = ims_results["Curvature_undercooling"]
 
+    print("plot_V_R: unpacked arrays", len(G))
+
     idx = np.argmin(np.abs(G - Wanted_G))
+    print("plot_V_R: idx found", idx)
 
     # --------------------------------------------------
     # Plotting V and R curves
     # --------------------------------------------------
     
-    fig_radius = plt.figure(figsize = fig_size)
+    fig_radius, ax1 = plt.subplots(figsize = fig_size)
+    print("plot_V_R: made fig_radius")
 
     if (plot_range == True) :
         
@@ -42,44 +48,48 @@ def plot_V_R(ims_results, Wanted_G, fig_size, plot_range = False, G_range = (1e-
         for ix in range(len(G_mask)):
 
         #ix = 0
-            plt.loglog(V_minus[ix + idx_low][0], R_minus[ix + idx_low], label="Negatives", color = "green", linestyle = "--", linewidth = 2)
-            plt.loglog(V_plus[ix + idx_low][0], R_plus[ix + idx_low], label="Positives", color = "blue", linestyle = "-", linewidth = 2)
-            plt.xlabel("Velocity (m/s)")
-            plt.ylabel("Tip radius (m)")
-            plt.title(f"Thermal Gradient {G[ix + idx_low]:.1e}")
-            #plt.legend()
-            plt.grid(True)
+            ax1.loglog(V_minus[ix + idx_low][0], R_minus[ix + idx_low], label="Negatives", color = "green", linestyle = "--", linewidth = 2)
+            ax1.loglog(V_plus[ix + idx_low][0], R_plus[ix + idx_low], label="Positives", color = "blue", linestyle = "-", linewidth = 2)
+            ax1.set_xlabel("Velocity (m/s)")
+            ax1.set_ylabel("Tip radius (m)")
+            ax1.set_title(f"Thermal Gradient {G[ix + idx_low]:.1e}")
+            #fig_radius.legend()
+            ax1.grid(True)
     else:
-        plt.loglog(V_minus[idx][0], R_minus[idx], label="Negatives", color = "green", linestyle = "--", linewidth = 2)
-        plt.loglog(V_plus[idx][0], R_plus[idx], label="Positives", color = "blue", linestyle = "-", linewidth = 2)
-        plt.xlabel("Velocity (m/s)")
-        plt.ylabel("Tip radius (m)")
-        plt.title(f"Thermal Gradient {G[idx]:.1e}")
-        #plt.legend()
-        plt.grid(True)
+        ax1.loglog(V_minus[idx][0], R_minus[idx], label="Negatives", color = "green", linestyle = "--", linewidth = 2)
+        ax1.loglog(V_plus[idx][0], R_plus[idx], label="Positives", color = "blue", linestyle = "-", linewidth = 2)
+        ax1.set_xlabel("Velocity (m/s)")
+        ax1.set_ylabel("Tip radius (m)")
+        ax1.set_title(f"Thermal Gradient {G[idx]:.1e}")
+        ax1.legend()
+        ax1.grid(True)
+
+    print("plot_V_R: finished radius plotting")
 
     # --------------------------------------------------
     # Plotting V versus solute undercooling
     # --------------------------------------------------
-    fig_cool = plt.figure(figsize = fig_size)
+    fig_cool, ax2 = plt.subplots(figsize = fig_size)
+    print("plot_V_R: made fig_cool")
     solute_colors = spacing_to_color(np.linspace(0,len(Solute_undercooling)-1, len(Solute_undercooling)))
 
     for j in range(len(Solute_undercooling)):
         color = solute_colors[j]
         V_solute_i, solute_i = monotonic_display_xy(V_plus[idx][0], Solute_undercooling[j])
-        plt.semilogx(V_solute_i, solute_i, label=f"Solute {j+1}", color = color, linestyle = "-", linewidth = 2)
+        ax2.semilogx(V_solute_i, solute_i, label=f"Solute {j+1}", color = color, linestyle = "-", linewidth = 2)
     V_total, total_cool = monotonic_display_xy(V_plus[idx][0], Total_undercooling[idx])
-    plt.semilogx(V_total, total_cool, label="Total Undercooling", color = "black", linestyle = "-", linewidth = 2)
+    ax2.semilogx(V_total, total_cool, label="Total Undercooling", color = "black", linestyle = "-", linewidth = 2)
     V_curve, curvature_cool = monotonic_display_xy(V_plus[idx][0], Curvature_undercooling[idx])
-    plt.semilogx(V_curve, curvature_cool, label="Curvature Undercooling", color = (0.45,0.25,0.0), linestyle = "-", linewidth = 2)
-    plt.xlabel("Velocity (m/s)")
-    plt.ylabel("Undercooling (K)")
-    plt.title(f"Thermal Gradient {G[idx]:.1e}")
-    plt.legend()
-    plt.grid(True)
+    ax2.semilogx(V_curve, curvature_cool, label="Curvature Undercooling", color = (0.45,0.25,0.0), linestyle = "-", linewidth = 2)
+    ax2.set_xlabel("Velocity (m/s)")
+    ax2.set_ylabel("Undercooling (K)")
+    ax2.set_title(f"Thermal Gradient {G[idx]:.1e}")
+    ax2.legend()
+    ax2.grid(True)
 
+    print("plot_V_R: finished cooling plotting")
     # --------------------------------------------------
     # Unleash the images!!
     # --------------------------------------------------
 
-    return(fig_radius, fig_cool)
+    return (fig_radius, fig_cool)

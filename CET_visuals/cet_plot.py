@@ -12,7 +12,7 @@ def spacing_to_color(spacings):
 
     return {lam_um: color for lam_um, color in zip(unique, colors)}
 
-def plot_cet(cet_results, phi_list, G_out, V_max_env, V_min_env):
+def plot_cet(cet_results, phi_list, G_out, V_max_env, V_min_env, ax):
     """
     Plot CET G-V curves
     """
@@ -32,7 +32,7 @@ def plot_cet(cet_results, phi_list, G_out, V_max_env, V_min_env):
         G = np.concatenate([ [np.min(G_out)], G ])
         V = np.concatenate([ [V[0]], V])
 
-        plt.loglog(
+        ax.loglog(
             G, #_trim,
             V, #_trim,
             label = label,
@@ -42,12 +42,10 @@ def plot_cet(cet_results, phi_list, G_out, V_max_env, V_min_env):
             linewidth = 2
         )
 
-    plt.xlabel("Thermal Gradient G (K/m)")
-    plt.ylabel("Velocity V (m/s)")
-    plt.title("CET Map")
+    ax.set_xlabel("Thermal Gradient G (K/m)")
+    ax.set_ylabel("Velocity V (m/s)")
+    ax.set_title("CET Map")
+    ax.grid(True)
+    ax.legend()
 
-    plt.grid(True)
-    plt.legend()
-    plt.tight_layout()
-
-    #return(fig)
+    #rturn(fig)

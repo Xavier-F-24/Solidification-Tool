@@ -1,25 +1,25 @@
-from core.inputs import SolidificationInputs
+from solidification_tool.core.inputs import SolidificationInputs
 
-from heat_models.steady_state_directional import solve_steady_state_directional
-from heat_visuals.G_V_plots import plot_G_V
+from solidification_tool.heat_models.steady_state_directional import solve_steady_state_directional
+from solidification_tool.heat_visuals.G_V_plots import plot_G_V
 
-from IMS_model.ims import solve_ims
-from IMS_model.extract_stability import extract_stability_boundaries
-from IMS_visuals.V_R_plots import plot_V_R
-from IMS_visuals.stability_plots import dendritic_stability_edges
+from solidification_tool.IMS_model.ims import solve_ims
+from solidification_tool.IMS_model.extract_stability import extract_stability_boundaries
+from solidification_tool.IMS_visuals.V_R_plots import plot_V_R
+from solidification_tool.IMS_visuals.stability_plots import dendritic_stability_edges
 
-from PDAS_model.fit_powers import fit_ims_power_laws
-from PDAS_model.pdas import solve_pdas
-from PDAS_visuals.pdas_fits import plot_fits
-from PDAS_visuals.pdas_plot import plot_pdas
+from solidification_tool.PDAS_model.fit_powers import fit_ims_power_laws
+from solidification_tool.PDAS_model.pdas import solve_pdas
+from solidification_tool.PDAS_visuals.pdas_fits import plot_fits
+from solidification_tool.PDAS_visuals.pdas_plot import plot_pdas
 
-from SDAS_model.sdas import solve_sdas
-from SDAS_visuals.sdas_plot import plot_sdas
+from solidification_tool.SDAS_model.sdas import solve_sdas
+from solidification_tool.SDAS_visuals.sdas_plot import plot_sdas
 
-from CET_model.cet import solve_cet
-from CET_visuals.cet_plot import plot_cet
+from solidification_tool.CET_model.cet import solve_cet
+from solidification_tool.CET_visuals.cet_plot import plot_cet
 
-from io_utils.spacing import normalize_spacing_um
+from solidification_tool.io_utils.spacing import normalize_spacing_um
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -63,9 +63,10 @@ def show_heat_transfer(V, G, fig_size):
     # --------------------------------------------------
     # Display heat transfer results
     # --------------------------------------------------
-    fig = plot_G_V(V, G, fig_size)
+    fig = plot_G_V(V = V, G = G, fig_size = fig_size)
+    fig.tight_layout()
 
-    return(fig)
+    return [fig]
 
 def get_ims (inputs):
     # --------------------------------------------------
@@ -80,7 +81,7 @@ def show_ims(ims_results, Wanted_G, fig_size):
     # Display IMS results
     # --------------------------------------------------
     fig_radius, fig_cool = plot_V_R(ims_results, Wanted_G, fig_size)          # INPUT DESIRED THERMAL GRADIENT G
-    return(fig_radius, fig_cool)
+    return ([fig_radius, fig_cool])
 
 def get_stability_boundaries(ims_results):
 
@@ -90,9 +91,9 @@ def get_stability_boundaries(ims_results):
 
 def show_stability_region(G_out, V_planar, V_dend, fig_size):
     # this needs to go directly in front of PDAS and SDAS!!
-    fig = dendritic_stability_edges(G_out, V_planar, V_dend, fig_size)
+    fig, ax = dendritic_stability_edges(G_out, V_planar, V_dend, fig_size)
 
-    return(fig)
+    return fig, ax
 
 def get_ims_power_laws(ims_results, Wanted_G):
 
@@ -109,15 +110,15 @@ def get_pdas(inputs, V_planar, V_dend, fit_ims_results):
     return(pdas_results)
 
 def show_pdas(pdas_results, G_out, V_planar, V_dend, fig_size):
-    fig = show_stability_region(G_out, V_planar, V_dend, fig_size)
-    plot_pdas(pdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend, dry_run = False)
+    fig, ax = show_stability_region(G_out, V_planar, V_dend, fig_size)
+    plot_pdas(pdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend, dry_run = False, ax = ax)
 
-    return(fig)
+    return [fig]
 
 def show_power_law_fits(ims_results, fit_ims_results, Wanted_G, fig_size):
     # show the fits comparatively to V that exist
     fig_fit_radius, fig_fit_cool = plot_fits(ims_results, fit_ims_results, Wanted_G, fig_size)
-    return(fig_fit_radius, fig_fit_cool)
+    return ([fig_fit_radius, fig_fit_cool])
 
 def get_sdas(inputs, V_planar, V_dend, G_out):
     # --------------------------------------------------
@@ -128,14 +129,14 @@ def get_sdas(inputs, V_planar, V_dend, G_out):
     return(sdas_results)
 
 def show_sdas(sdas_results, G_out, V_planar, V_dend, fig_size):
-    fig = show_stability_region(G_out, V_planar, V_dend, fig_size)
-    plot_sdas(sdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend, dry_run = False)
+    fig, ax = show_stability_region(G_out, V_planar, V_dend, fig_size)
+    plot_sdas(sdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend, dry_run = False, ax = ax)
 
-    return(fig)
+    return [fig]
 
 def show_pdas_sdas(pdas_results, sdas_results, G_out, V_planar, V_dend, fig_size):
 
-    fig = show_stability_region(G_out, V_planar, V_dend, fig_size)
+    fig, ax = show_stability_region(G_out, V_planar, V_dend, fig_size)
 
     # --------------------------------------------------
     # First pass: determine which spacings appear
@@ -149,7 +150,8 @@ def show_pdas_sdas(pdas_results, sdas_results, G_out, V_planar, V_dend, fig_size
         V_dend,
         V_planar,
         color_map = None,   # no colors yet
-        dry_run = True      # important
+        dry_run = True,      # important
+        ax = ax
     )
 
     shown_sdas = plot_sdas(
@@ -158,7 +160,8 @@ def show_pdas_sdas(pdas_results, sdas_results, G_out, V_planar, V_dend, fig_size
         V_dend,
         V_planar,
         color_map = None,
-        dry_run = True
+        dry_run = True,      # important
+        ax = ax
     )
 
     shown_spacings = shown_pdas | shown_sdas
@@ -181,7 +184,8 @@ def show_pdas_sdas(pdas_results, sdas_results, G_out, V_planar, V_dend, fig_size
         V_dend,
         V_planar,
         color_map = color_map,
-        dry_run = False
+        dry_run = False,      # important
+        ax = ax
     )
 
     plot_sdas(
@@ -190,27 +194,19 @@ def show_pdas_sdas(pdas_results, sdas_results, G_out, V_planar, V_dend, fig_size
         V_dend,
         V_planar,
         color_map=color_map,
-        dry_run = False
+        dry_run = False,      # important
+        ax = ax
     )
 
     add_pdas_sdas_legend(color_map, shown_spacings)
 
-    plt.xlabel("Thermal Gradient G (K/m)")
-    plt.ylabel("Velocity V (m/s)")
-    plt.title("PDAS vs SDAS Stability Map")
-    plt.grid(True, which="both", ls="--", alpha=0.3)
-    plt.tight_layout()
+    ax.set_xlabel("Thermal Gradient G (K/m)")
+    ax.set_ylabel("Velocity V (m/s)")
+    ax.set_title("PDAS vs SDAS Stability Map")
+    ax.grid(True, which="both", ls="--", alpha=0.3)
+    fig.tight_layout()
 
-    return(fig)
-
-
-def show_pdas_sdasold(pdas_results, sdas_results, G_out, V_planar, V_dend):
-    f = show_stability_region(G_out, V_planar, V_dend)
-    fi = plot_pdas(pdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend)
-    fig = plot_sdas(sdas_results, G_out, V_min_env = V_planar, V_max_env = V_dend)
-    plt.title(f"Combined PDAS and SDAS Plot")
-
-    return(fig)
+    return [fig]
 
 def get_cet(inputs, fit_ims_results, V_planar, V_dend, G_out):
     # --------------------------------------------------
@@ -221,9 +217,10 @@ def get_cet(inputs, fit_ims_results, V_planar, V_dend, G_out):
     return(cet_results, phi_list)
 
 def show_cet(cet_results, V_planar, V_dend, G_out, fig_size, phi_list):
-    fig = show_stability_region(G_out, V_planar, V_dend, fig_size)
-    plot_cet(cet_results, phi_list, G_out, V_min_env = V_planar, V_max_env = V_dend)
-    return(fig)
+    fig, ax = show_stability_region(G_out, V_planar, V_dend, fig_size)
+    plot_cet(cet_results, phi_list, G_out, V_min_env = V_planar, V_max_env = V_dend, ax = ax)
+    fig.tight_layout()
+    return [fig]
 
 # COLOR MAP UTILITY
 
