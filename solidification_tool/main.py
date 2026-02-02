@@ -76,11 +76,12 @@ def run_simulation():
 
     return(results)
 
-def show_all(results, Wanted_G=1e5):
+def show_all(results, Wanted_G=1e5, show_pdas=True, show_sdas=True):
     fig_size = (8, 6)
 
     figs = {}
 
+    """
     def _dbg(name, x):
     
         print(name, "type:", type(x))
@@ -88,21 +89,19 @@ def show_all(results, Wanted_G=1e5):
             print("  list lens:", len(x), "item types:", [type(i) for i in x])
         elif isinstance(x, Figure):
             print("  (raw Figure)")
-
+    """
 
     figs["heat_transfer"] = show_heat_transfer(
         results.V,
         results.G,
         fig_size
     )
-    _dbg("heat", figs["heat_transfer"])
 
     figs["ims"] = show_ims(
         results.ims,
         Wanted_G,
         fig_size
     )
-    _dbg("ims", figs["ims"])
 
     figs["ims_fits"] = show_power_law_fits(
         results.ims,
@@ -110,7 +109,6 @@ def show_all(results, Wanted_G=1e5):
         Wanted_G,
         fig_size
     )
-    _dbg("fits", figs["ims_fits"])
 
     figs["pdas_sdas"] = show_pdas_sdas(
         results.pdas,
@@ -118,9 +116,10 @@ def show_all(results, Wanted_G=1e5):
         results.stability["G_out"],
         results.stability["V_planar"],
         results.stability["V_dend"],
-        fig_size
+        fig_size,
+        show_pdas=show_pdas,
+        show_sdas=show_sdas
     )
-    _dbg("p+sdas", figs["pdas_sdas"])
 
     figs["cet"] = show_cet(
         results.cet,
@@ -130,11 +129,6 @@ def show_all(results, Wanted_G=1e5):
         fig_size,
         results.phi_list
     )
-    _dbg("cet", figs["cet"])
-
-    for k, v in figs.items():
-        print(k, type(v), "len:", len(v) if hasattr(v, "__len__") else "N/A")
-
   
     return figs
 

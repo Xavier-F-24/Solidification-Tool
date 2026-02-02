@@ -134,41 +134,50 @@ def show_sdas(sdas_results, G_out, V_planar, V_dend, fig_size):
 
     return [fig]
 
-def show_pdas_sdas(pdas_results, sdas_results, G_out, V_planar, V_dend, fig_size):
+def show_pdas_sdas(pdas_results, sdas_results, G_out, V_planar, V_dend, fig_size, show_pdas=True, show_sdas=True):
 
     fig, ax = show_stability_region(G_out, V_planar, V_dend, fig_size)
 
     # --------------------------------------------------
     # First pass: determine which spacings appear
     # --------------------------------------------------
+    shown_pdas = set()
+    shown_sdas = set()
+
 
     shown_spacings = set()
 
-    shown_pdas = plot_pdas(
-        pdas_results,
-        G_out,
-        V_dend,
-        V_planar,
-        color_map = None,   # no colors yet
-        dry_run = True,      # important
-        ax = ax
-    )
+    if show_pdas:
+        shown_pdas = plot_pdas(
+            pdas_results,
+            G_out,
+            V_dend,
+            V_planar,
+            color_map = None,   # no colors yet
+            dry_run = True,      # important
+            ax = ax
+        )
 
-    shown_sdas = plot_sdas(
-        sdas_results,
-        G_out,
-        V_dend,
-        V_planar,
-        color_map = None,
-        dry_run = True,      # important
-        ax = ax
-    )
+    if show_sdas:
+        shown_sdas = plot_sdas(
+            sdas_results,
+            G_out,
+            V_dend,
+            V_planar,
+            color_map = None,
+            dry_run = True,      # important
+            ax = ax
+        )
 
     shown_spacings = shown_pdas | shown_sdas
     
     # --------------------------------------------------
     # Build colormap ONLY from shown spacings
     # --------------------------------------------------
+    if not shown_spacings:
+        # just return the stability edges plot (no PDAS/SDAS overlays)
+        return [fig]
+    
     color_map = spacing_to_color(sorted(shown_spacings))
     assert all(isinstance(k, float) for k in color_map.keys())
 
@@ -178,27 +187,30 @@ def show_pdas_sdas(pdas_results, sdas_results, G_out, V_planar, V_dend, fig_size
     #print(shown_spacings)
     #print(color_map.keys())
 
-    plot_pdas(
-        pdas_results,
-        G_out,
-        V_dend,
-        V_planar,
-        color_map = color_map,
-        dry_run = False,      # important
-        ax = ax
-    )
+    if show_pdas:
+        plot_pdas(
+            pdas_results,
+            G_out,
+            V_dend,
+            V_planar,
+            color_map = color_map,
+            dry_run = False,      # important
+            ax = ax
+        )
 
-    plot_sdas(
-        sdas_results,
-        G_out,
-        V_dend,
-        V_planar,
-        color_map=color_map,
-        dry_run = False,      # important
-        ax = ax
-    )
+    if show_sdas:
+        plot_sdas(
+            sdas_results,
+            G_out,
+            V_dend,
+            V_planar,
+            color_map=color_map,
+            dry_run = False,      # important
+            ax = ax
+        )
 
-    add_pdas_sdas_legend(color_map, shown_spacings)
+    if show_pdas or show_sdas:
+        add_pdas_sdas_legend(color_map, shown_spacings)
 
     ax.set_xlabel("Thermal Gradient G (K/m)")
     ax.set_ylabel("Velocity V (m/s)")

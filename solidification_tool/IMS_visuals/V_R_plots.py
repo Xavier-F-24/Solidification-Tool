@@ -15,8 +15,6 @@ def plot_V_R(ims_results, Wanted_G, fig_size, plot_range = False, G_range = (1e-
     # --------------------------------------------------
     # Unpack inputs
     # --------------------------------------------------
-    print("plot_V_R: start")
-
     G = ims_results["G"]
     V_minus = ims_results["V-"]
     V_plus = ims_results["V+"]
@@ -26,17 +24,13 @@ def plot_V_R(ims_results, Wanted_G, fig_size, plot_range = False, G_range = (1e-
     Solute_undercooling = ims_results["Solute_undercooling"]
     Curvature_undercooling = ims_results["Curvature_undercooling"]
 
-    print("plot_V_R: unpacked arrays", len(G))
-
     idx = np.argmin(np.abs(G - Wanted_G))
-    print("plot_V_R: idx found", idx)
 
     # --------------------------------------------------
     # Plotting V and R curves
     # --------------------------------------------------
     
     fig_radius, ax1 = plt.subplots(figsize = fig_size)
-    print("plot_V_R: made fig_radius")
 
     if (plot_range == True) :
         
@@ -64,13 +58,10 @@ def plot_V_R(ims_results, Wanted_G, fig_size, plot_range = False, G_range = (1e-
         ax1.legend()
         ax1.grid(True)
 
-    print("plot_V_R: finished radius plotting")
-
     # --------------------------------------------------
     # Plotting V versus solute undercooling
     # --------------------------------------------------
     fig_cool, ax2 = plt.subplots(figsize = fig_size)
-    print("plot_V_R: made fig_cool")
     solute_colors = spacing_to_color(np.linspace(0,len(Solute_undercooling)-1, len(Solute_undercooling)))
 
     for j in range(len(Solute_undercooling)):
@@ -87,7 +78,6 @@ def plot_V_R(ims_results, Wanted_G, fig_size, plot_range = False, G_range = (1e-
     ax2.legend()
     ax2.grid(True)
 
-    print("plot_V_R: finished cooling plotting")
     # --------------------------------------------------
     # Unleash the images!!
     # --------------------------------------------------
