@@ -76,7 +76,7 @@ def run_simulation():
 
     return(results)
 
-def show_all(results, Wanted_G=1e5, show_pdas=True, show_sdas=True):
+def show_all(results, Wanted_G = 1e5, show_pdas=True, show_sdas=True, ims_g_range = []):
     fig_size = (8, 6)
 
     figs = {}
@@ -97,10 +97,18 @@ def show_all(results, Wanted_G=1e5, show_pdas=True, show_sdas=True):
         fig_size
     )
 
+    if ims_g_range == []:
+        plot_range = False
+        ims_g_range = (1e-9, 1e9)
+    else:
+        plot_range = True
+
     figs["ims"] = show_ims(
         results.ims,
         Wanted_G,
-        fig_size
+        fig_size,
+        plot_range = plot_range,
+        g_range = ims_g_range
     )
 
     figs["ims_fits"] = show_power_law_fits(

@@ -82,6 +82,23 @@ class MainWindow(QMainWindow):
         self.cb_show_sdas.setChecked(True)
         controls_layout.addWidget(self.cb_show_sdas)
 
+        self.cb_ims_range = QCheckBox("IMS: plot G range")
+        self.cb_ims_range.setChecked(False)
+        controls_layout.addWidget(self.cb_ims_range)
+
+        self.gmin = QDoubleSpinBox()
+        self.gmin.setRange(1e-12, 1e12)
+        self.gmin.setValue(1e3)
+        controls_layout.addWidget(QLabel("G min"))
+        controls_layout.addWidget(self.gmin)
+
+        self.gmax = QDoubleSpinBox()
+        self.gmax.setRange(1e-12, 1e12)
+        self.gmax.setValue(1e7)
+        controls_layout.addWidget(QLabel("G max"))
+        controls_layout.addWidget(self.gmax)
+
+
         # Replot button (no recompute)
         self.replot_btn = QPushButton("Replot (no recompute)")
         self.replot_btn.clicked.connect(self.replot_only)
@@ -90,8 +107,16 @@ class MainWindow(QMainWindow):
 
         self.wanted_g.editingFinished.connect(self.replot_only)
 
+        
+        self.cb_ims_range.stateChanged.connect(self._toggle_g_range)
+        self._toggle_g_range()
         self.cb_show_pdas.stateChanged.connect(self.replot_only)
         self.cb_show_sdas.stateChanged.connect(self.replot_only)
+
+        self.cb_ims_range.stateChanged.connect(self.replot_only)
+        self.gmin.editingFinished.connect(self.replot_only)
+        self.gmax.editingFinished.connect(self.replot_only)
+
 
         # -------- Right panel (plots) --------
         self.tabs = QTabWidget()
@@ -103,6 +128,11 @@ class MainWindow(QMainWindow):
         self._latest_results = None
 
         self.statusBar().showMessage("Ready")
+
+    def _toggle_g_range(self):
+        on = self.cb_ims_range.isChecked()
+        self.gmin.setEnabled(on)
+        self.gmax.setEnabled(on)
 
     def clear_tabs(self):
         while self.tabs.count():
@@ -143,12 +173,20 @@ class MainWindow(QMainWindow):
             show_pdas = self.cb_show_pdas.isChecked()
             show_sdas = self.cb_show_sdas.isChecked()
 
+            ims_plot_range = self.cb_ims_range.isChecked()
+            if ims_plot_range:
+                g_range = (float(self.gmin.value()), float(self.gmax.value()))
+            else:
+                g_range = []
+
             fig_dict = show_all(
                 self._latest_results,
                 Wanted_G=wanted_g,
                 show_pdas=show_pdas,
-                show_sdas=show_sdas
+                show_sdas=show_sdas,
+                ims_g_range=g_range
             )
+
 
             self.clear_tabs()
             self.add_figures_as_tabs(fig_dict)

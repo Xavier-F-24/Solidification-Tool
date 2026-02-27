@@ -76,11 +76,11 @@ def get_ims (inputs):
 
     return(ims_results)
 
-def show_ims(ims_results, Wanted_G, fig_size):
+def show_ims(ims_results, Wanted_G, fig_size, plot_range, g_range):
     # --------------------------------------------------
     # Display IMS results
     # --------------------------------------------------
-    fig_radius, fig_cool = plot_V_R(ims_results, Wanted_G, fig_size)          # INPUT DESIRED THERMAL GRADIENT G
+    fig_radius, fig_cool = plot_V_R(ims_results, Wanted_G, fig_size, plot_range= plot_range, G_range= g_range)          # INPUT DESIRED THERMAL GRADIENT G
     return ([fig_radius, fig_cool])
 
 def get_stability_boundaries(ims_results):
