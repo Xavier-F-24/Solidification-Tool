@@ -8,6 +8,16 @@ MVP Architecture:
 4. Export functionality (NPZ, JSON, figures)
 """
 
+import sys
+import os
+
+# Add the repo root to Python path so imports work
+# This handles both local runs and Streamlit Cloud deployment
+current_dir = os.path.dirname(os.path.abspath(__file__))
+repo_root = os.path.abspath(os.path.join(current_dir, '..', '..'))
+if repo_root not in sys.path:
+    sys.path.insert(0, repo_root)
+
 import streamlit as st
 import time
 import traceback
