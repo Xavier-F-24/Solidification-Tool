@@ -4,7 +4,7 @@ Sidebar UI components for input management.
 
 import streamlit as st
 import numpy as np
-from solidification_tool.core.inputs import SolidificationInputs
+from solidification_tool.app_api import SolidificationInputs
 from solidification_tool.streamlit_app.config import PRESETS, DEFAULT_VIZ_SETTINGS, DEFAULT_IMS_SETTINGS
 
 

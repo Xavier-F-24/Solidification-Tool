@@ -12,7 +12,7 @@ from typing import Any
 
 import streamlit as st
 
-from solidification_tool.core.inputs import SolidificationInputs
+from solidification_tool.app_api import SolidificationInputs, run_model
 
 
 def hash_inputs(inputs_dict: dict[str, Any]) -> str:
@@ -21,15 +21,13 @@ def hash_inputs(inputs_dict: dict[str, Any]) -> str:
 
 
 def get_or_run_simulation(inputs: SolidificationInputs, wanted_g: float):
-    from solidification_tool.core.engine import run_simulation
-
     inputs_dict = inputs.to_dict()
 
     @st.cache_data(show_spinner="Running simulation...")
     def _solve(inputs_payload: dict[str, Any], wanted_g_value: float):
-        return run_simulation(
+        return run_model(
             SolidificationInputs(**inputs_payload),
-            Wanted_G=wanted_g_value,
+            wanted_g=wanted_g_value,
             run_name="streamlit_run",
             notes="Streamlit app run",
         )
@@ -39,4 +37,3 @@ def get_or_run_simulation(inputs: SolidificationInputs, wanted_g: float):
 
 def reset_cache():
     st.cache_data.clear()
-

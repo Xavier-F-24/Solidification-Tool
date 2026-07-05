@@ -31,13 +31,15 @@ from PySide6.QtWidgets import (
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 
-from solidification_tool.core.inputs import SolidificationInputs
-from solidification_tool.core.defaults import get_inputs
-from solidification_tool.core.engine import run_simulation
-from solidification_tool.visualization.figures import show_all
-
-# Persistence
-from solidification_tool.io_utils.results_io import save_results, load_results
+from solidification_tool.app_api import (
+    PlotSettings,
+    SolidificationInputs,
+    build_figures,
+    get_default_inputs,
+    load_run,
+    run_model,
+    save_run,
+)
 
 
 # -------------------------
@@ -305,11 +307,11 @@ class InputsPage(QWidget):
 
         try:
             if name.startswith("Default"):
-                self.set_inputs(get_inputs())
+                self.set_inputs(get_default_inputs())
                 return
 
             if name.startswith("Quick demo"):
-                inp = get_inputs()
+                inp = get_default_inputs()
                 # Gentle demo scaling (keeps numbers sane for first-time UI)
                 inp.G_0 = float(getattr(inp, "G_0", 1e5))
                 inp.V_0 = float(getattr(inp, "V_0", 1e-3))
@@ -322,7 +324,7 @@ class InputsPage(QWidget):
 
     def load_defaults(self):
         try:
-            defaults = get_inputs()
+            defaults = get_default_inputs()
             self.set_inputs(defaults)
             self.preset_combo.blockSignals(True)
             self.preset_combo.setCurrentText("Default (get_inputs)")
@@ -563,7 +565,7 @@ class ComputePlotPage(QWidget):
 
         canvas.mpl_connect("motion_notify_event", on_move)
 
-    def get_plot_settings(self) -> dict[str, Any]:
+    def get_plot_settings(self) -> PlotSettings:
         wanted_g = float(self.wanted_g.value())
         show_pdas = self.cb_show_pdas.isChecked()
         show_sdas = self.cb_show_sdas.isChecked()
@@ -573,11 +575,11 @@ class ComputePlotPage(QWidget):
         else:
             g_range = []
 
-        return dict(
-            Wanted_G=wanted_g,
+        return PlotSettings(
+            wanted_g=wanted_g,
             show_pdas=show_pdas,
             show_sdas=show_sdas,
-            ims_g_range=g_range,
+            ims_g_range=tuple(g_range),
         )
 
 
@@ -598,7 +600,7 @@ class SimulationWorker(QObject):
     def run(self):
         try:
             # Run compute only; plotting stays on UI thread.
-            results = run_simulation(self.inputs, Wanted_G=self.wanted_g)
+            results = run_model(self.inputs, wanted_g=self.wanted_g)
             self.finished.emit(results)
         except Exception:
             self.error.emit(traceback.format_exc())
@@ -703,7 +705,7 @@ class MainWindow(QMainWindow):
 
         try:
             settings = self.compute_page.get_plot_settings()
-            fig_dict = show_all(self._latest_results, **settings)
+            fig_dict = build_figures(self._latest_results, settings)
             self.compute_page.clear_tabs()
             self.compute_page.add_figures_as_tabs(fig_dict)
             self.compute_page.status_label.setText("Done")
@@ -724,7 +726,7 @@ class MainWindow(QMainWindow):
             return
         try:
             settings = self.compute_page.get_plot_settings()
-            fig_dict = show_all(self._latest_results, **settings)
+            fig_dict = build_figures(self._latest_results, settings)
             self.compute_page.clear_tabs()
             self.compute_page.add_figures_as_tabs(fig_dict)
             self.compute_page.status_label.setText("Replotted")
@@ -745,7 +747,7 @@ class MainWindow(QMainWindow):
             return
 
         try:
-            save_results(self._latest_results, out_dir)
+            save_run(self._latest_results, out_dir)
             self.statusBar().showMessage(f"Saved run to: {os.path.join(out_dir, 'run.npz')}")
         except Exception as e:
             QMessageBox.critical(self, "Save Error", str(e))
@@ -761,7 +763,7 @@ class MainWindow(QMainWindow):
             return
 
         try:
-            self._latest_results = load_results(path)
+            self._latest_results = load_run(path)
             self.compute_page.replot_btn.setEnabled(True)
             self.replot_only()
             self.compute_page.status_label.setText("Loaded")
@@ -779,7 +781,7 @@ class MainWindow(QMainWindow):
 
         try:
             settings = self.compute_page.get_plot_settings()
-            fig_dict = show_all(self._latest_results, **settings)
+            fig_dict = build_figures(self._latest_results, settings)
 
             for group, figs in fig_dict.items():
                 for i, fig in enumerate(figs):

@@ -40,7 +40,7 @@ from solidification_tool.streamlit_app.caching import (
     get_or_run_simulation,
     reset_cache,
 )
-from solidification_tool.visualization.figures import show_all
+from solidification_tool.app_api import PlotSettings, build_figures
 from solidification_tool.streamlit_app.results_display import (
     display_results_tab,
     display_physics_tab,
@@ -134,12 +134,13 @@ def run_simulation():
         show_pdas = st.session_state.get("show_pdas", True)
         show_sdas = st.session_state.get("show_sdas", True)
         
-        figs = show_all(
+        figs = build_figures(
             results,
-            Wanted_G=wanted_g,
-            show_pdas=show_pdas,
-            show_sdas=show_sdas,
-            ims_g_range=[]
+            PlotSettings(
+                wanted_g=wanted_g,
+                show_pdas=show_pdas,
+                show_sdas=show_sdas,
+            ),
         )
         
         # Complete
@@ -218,12 +219,7 @@ if st.session_state.simulation_complete:
         # Export as NPZ
         import io
         buffer = io.BytesIO()
-        
-        from solidification_tool.io_utils.results_io import save_results
-        # Create a temporary mock run dir
-        class MockRunDir:
-            pass
-        
+
         # Simplified NPZ export
         np.savez_compressed(
             buffer,
