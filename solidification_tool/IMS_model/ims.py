@@ -5,9 +5,10 @@ Ivantsov Multiple Solutes undercooling model
 import numpy as np
 
 from solidification_tool.IMS_model.ivantsov import Ivantsov
+from solidification_tool.core.settings import EngineSettings
 
 
-def solve_ims(inputs):
+def solve_ims(inputs, settings: EngineSettings | None = None):
     """
     Multi-solute Ivantsov + marginal stability solver (vectorized in G).
 
@@ -21,6 +22,8 @@ def solve_ims(inputs):
     Written Jan 2026, XF
     """
 
+    settings = settings or EngineSettings()
+
     # --------------------------------------------------
     # Unpack inputs
     # --------------------------------------------------
@@ -31,8 +34,7 @@ def solve_ims(inputs):
 
     Gamma = float(inputs.Gamma)
 
-    N_g = 100
-    G = np.logspace(-6, 9, N_g)                     # (n_G,)
+    G = np.logspace(settings.ims_g_min_exp, settings.ims_g_max_exp, settings.ims_g_count)                     # (n_G,)
     G = G[:, None, None]                         # (n_G, 1, 1)
 
     n_solute = C_0.shape[0]
@@ -41,9 +43,8 @@ def solve_ims(inputs):
     # Peclet construction (solute-scaled)
     # --------------------------------------------------
 
-    # NOW, Jan 27, we want to have the peclet numbers scaled to shorter ranges (logspace start and end) so that we get maximum information
-    N_Pe = 3000
-    P = np.logspace(-9, 9, N_Pe)                 # (n_Pe,)
+    # Scaled Peclet range for useful stability sampling.
+    P = np.logspace(settings.ims_pe_min_exp, settings.ims_pe_max_exp, settings.ims_pe_count)                 # (n_Pe,)
 
     D_ref = D[0, 0]
     scale = D_ref / D                            # (n_solute, 1)

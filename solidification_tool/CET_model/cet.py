@@ -1,6 +1,6 @@
 import numpy as np
-import numpy as np
 from scipy.optimize import brentq
+from solidification_tool.core.settings import EngineSettings
 
 def solve_V_for_G(
     G_out,
@@ -40,11 +40,12 @@ def solve_V_for_G(
     return V_root
 
 
-def solve_cet(inputs, V_min, V_max, fit_ims_results, G_out):
+def solve_cet(inputs, V_min, V_max, fit_ims_results, G_out, settings: EngineSettings | None = None):
     """
     Compute G(V) curves for Columnar to Equiaxed transitions of 0.01 and 0.5 (standard)
     """
-    phi_list = [0.01, 0.5]
+    settings = settings or EngineSettings()
+    phi_list = list(settings.cet_phi_values)
 
     DeltaT0 = inputs.NonEq_Freezing_range
     N0 = inputs.N0
@@ -76,7 +77,7 @@ def solve_cet(inputs, V_min, V_max, fit_ims_results, G_out):
         phi = phi
         )
 
-        V_grid = np.logspace(np.log10(V_end), np.log10(V_max), 100)
+        V_grid = np.logspace(np.log10(V_end), np.log10(V_max), settings.cet_v_count)
 
         DeltaT = alpha2 * V_grid ** beta2
 

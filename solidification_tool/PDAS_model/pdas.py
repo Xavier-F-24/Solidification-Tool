@@ -1,6 +1,8 @@
 import numpy as np
+from solidification_tool.core.settings import EngineSettings
 
-def solve_pdas(inputs, V_min, V_max, fit_ims_results):
+
+def solve_pdas(inputs, V_min, V_max, fit_ims_results, settings: EngineSettings | None = None):
     """
     Compute G(V) curves for prescribed primary dendrite arm spacings (lambda1)
     """
@@ -8,7 +10,8 @@ def solve_pdas(inputs, V_min, V_max, fit_ims_results):
     # --------------------------------------------------
     # Prescribed PDAS values (meters)
     # --------------------------------------------------
-    lambda_list = np.logspace(-6, 6, 13)  # 1 µm → 1 mm (adjust freely)
+    settings = settings or EngineSettings()
+    lambda_list = np.logspace(settings.spacing_min_exp, settings.spacing_max_exp, settings.spacing_count)
 
     # --------------------------------------------------
     # Fit IMS power laws at desired G
@@ -21,7 +24,7 @@ def solve_pdas(inputs, V_min, V_max, fit_ims_results):
     # --------------------------------------------------
     # Velocity grid (physically bounded)
     # --------------------------------------------------
-    V_grid = np.logspace(np.log10(V_min), np.log10(V_max), 100)
+    V_grid = np.logspace(np.log10(V_min), np.log10(V_max), settings.spacing_v_count)
 
     DeltaT0 = inputs.NonEq_Freezing_range
 

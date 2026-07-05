@@ -1,5 +1,6 @@
 import numpy as np
 
+from solidification_tool.core.results import ImsPowerLawFit
 from solidification_tool.io_utils.analysis_utils import r_squared
 
 def fit_ims_power_laws(ims_results, Wanted_G):
@@ -51,12 +52,12 @@ def fit_ims_power_laws(ims_results, Wanted_G):
     logDt_fit = log_alpha2 + beta2 * logV
     R2_undercooling = r_squared(logDt, logDt_fit)
 
-    return {
-        "alpha1": alpha1,
-        "beta1": beta1,
-        "R2_radius": R2_radius,
-        "alpha2": alpha2,
-        "beta2": beta2,
-        "R2_undercooling": R2_undercooling,
-    }
+    return ImsPowerLawFit(
+        alpha1=alpha1,
+        beta1=beta1,
+        R2_radius=R2_radius,
+        alpha2=alpha2,
+        beta2=beta2,
+        R2_undercooling=R2_undercooling,
+    )
     #return alpha1, beta1, alpha2, beta2, R2_radius, R2_undercooling

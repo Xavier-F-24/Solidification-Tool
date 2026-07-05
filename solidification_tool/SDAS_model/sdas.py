@@ -1,6 +1,8 @@
 import numpy as np
+from solidification_tool.core.settings import EngineSettings
 
-def solve_sdas(inputs, V_min, V_max):
+
+def solve_sdas(inputs, V_min, V_max, settings: EngineSettings | None = None):
     """
     Compute G(V) curves for prescribed secondary dendrite arm spacings (lambda2)
     """
@@ -8,12 +10,13 @@ def solve_sdas(inputs, V_min, V_max):
     # --------------------------------------------------
     # Prescribed PDAS values (meters)
     # --------------------------------------------------
-    lambda_list = np.logspace(-6, 6, 13)  # 1 µm → 1 mm (adjust freely)
+    settings = settings or EngineSettings()
+    lambda_list = np.logspace(settings.spacing_min_exp, settings.spacing_max_exp, settings.spacing_count)
 
     # --------------------------------------------------
     # Velocity grid (physically bounded)
     # --------------------------------------------------
-    V_grid = np.logspace(np.log10(V_min), np.log10(V_max), 100)
+    V_grid = np.logspace(np.log10(V_min), np.log10(V_max), settings.spacing_v_count)
 
     C_0 = np.atleast_1d(inputs.C_0)[:, None]    # (n_solute, 1)
     C_f = np.atleast_1d(inputs.C_f)[:, None]

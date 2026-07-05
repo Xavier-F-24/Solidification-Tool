@@ -5,6 +5,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from solidification_tool.core.inputs import SolidificationInputs
+from solidification_tool.core.settings import EngineSettings
+from solidification_tool.core.validation import EngineInputError
 
 if TYPE_CHECKING:
     from solidification_tool.core.results import SimulationResults
@@ -30,10 +32,11 @@ def run_model(
     wanted_g: float = 1e5,
     run_name: str = "baseline_run",
     notes: str = "Initial full model coupling",
+    settings: EngineSettings | None = None,
 ) -> SimulationResults:
     from solidification_tool.core.engine import run_simulation
 
-    return run_simulation(inputs, Wanted_G=wanted_g, run_name=run_name, notes=notes)
+    return run_simulation(inputs, Wanted_G=wanted_g, run_name=run_name, notes=notes, settings=settings)
 
 
 def build_figures(
