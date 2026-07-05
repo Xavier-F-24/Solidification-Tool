@@ -37,16 +37,10 @@ from solidification_tool.streamlit_app.inputs_ui import (
     load_preset_into_state,
 )
 from solidification_tool.streamlit_app.caching import (
-    get_or_run_heat_transfer,
-    get_or_run_ims,
-    get_or_run_stability_and_fits,
-    get_or_run_pdas,
-    get_or_run_sdas,
-    get_or_run_cet,
+    get_or_run_simulation,
     reset_cache,
 )
 from solidification_tool.visualization.figures import show_all
-from solidification_tool.core.results import SimulationResults
 from solidification_tool.streamlit_app.results_display import (
     display_results_tab,
     display_physics_tab,
@@ -128,67 +122,15 @@ def run_simulation():
         progress_bar.progress(5)
         inputs = create_inputs_from_state()
         
-        # Heat Transfer
-        status_text.text("🔥 Running heat transfer model...")
-        progress_bar.progress(15)
-        V, G = get_or_run_heat_transfer(inputs)
-        
-        # IMS
-        status_text.text("📊 Solving IMS model...")
+        # Engine
+        status_text.text("Running simulation engine...")
         progress_bar.progress(35)
-        ims_results = get_or_run_ims(inputs, V, G)
-        
-        # Stability & Fits
-        status_text.text("🎯 Extracting stability boundaries...")
-        progress_bar.progress(50)
         wanted_g = st.session_state.get("wanted_g", 1e5)
-        G_out, V_planar, V_dend, fit_ims_results = get_or_run_stability_and_fits(
-            inputs, ims_results, wanted_g
-        )
-        
-        # PDAS
-        status_text.text("🔬 Computing PDAS...")
-        progress_bar.progress(60)
-        pdas_results = get_or_run_pdas(inputs, V_planar, V_dend, fit_ims_results)
-        
-        # SDAS
-        status_text.text("🔬 Computing SDAS...")
-        progress_bar.progress(70)
-        sdas_results = get_or_run_sdas(inputs, V_planar, V_dend)
-        
-        # CET
-        status_text.text("⚗️ Computing CET...")
-        progress_bar.progress(80)
-        cet_results, phi_list = get_or_run_cet(
-            inputs, fit_ims_results, V_planar, V_dend, G_out
-        )
-        
-        # Create results object
-        status_text.text("📈 Generating visualizations...")
-        progress_bar.progress(90)
-        
-        results = SimulationResults(
-            inputs=inputs.to_dict(),
-            metadata={
-                "run_name": f"streamlit_run_{datetime.now().strftime('%Y%m%d_%H%M%S')}",
-                "notes": "Streamlit app run"
-            },
-            V=V,
-            G=G,
-            ims=ims_results,
-            fit_ims=fit_ims_results,
-            stability={
-                "G_out": G_out,
-                "V_planar": V_planar,
-                "V_dend": V_dend
-            },
-            pdas=pdas_results,
-            sdas=sdas_results,
-            cet=cet_results,
-            phi_list=phi_list
-        )
+        results = get_or_run_simulation(inputs, wanted_g)
         
         # Generate figures
+        status_text.text("Generating visualizations...")
+        progress_bar.progress(90)
         show_pdas = st.session_state.get("show_pdas", True)
         show_sdas = st.session_state.get("show_sdas", True)
         
