@@ -45,7 +45,7 @@ from solidification_tool.streamlit_app.caching import (
     get_or_run_cet,
     reset_cache,
 )
-from solidification_tool.main import show_all
+from solidification_tool.visualization.figures import show_all
 from solidification_tool.core.results import SimulationResults
 from solidification_tool.streamlit_app.results_display import (
     display_results_tab,
@@ -154,7 +154,7 @@ def run_simulation():
         # SDAS
         status_text.text("🔬 Computing SDAS...")
         progress_bar.progress(70)
-        sdas_results = get_or_run_sdas(inputs, V_planar, V_dend, G_out)
+        sdas_results = get_or_run_sdas(inputs, V_planar, V_dend)
         
         # CET
         status_text.text("⚗️ Computing CET...")

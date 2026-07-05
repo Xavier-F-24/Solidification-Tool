@@ -31,10 +31,10 @@ from PySide6.QtWidgets import (
 from matplotlib.backends.backend_qtagg import FigureCanvasQTAgg as FigureCanvas
 import matplotlib.pyplot as plt
 
-# Pipeline entry points
-from solidification_tool.main import run_simulation, show_all
 from solidification_tool.core.inputs import SolidificationInputs
-from solidification_tool.core.pipeline import get_inputs
+from solidification_tool.core.defaults import get_inputs
+from solidification_tool.core.engine import run_simulation
+from solidification_tool.visualization.figures import show_all
 
 # Persistence
 from solidification_tool.io_utils.results_io import save_results, load_results

@@ -25,7 +25,7 @@ def get_or_run_heat_transfer(inputs):
     Cached heat transfer solver.
     Only recomputes if inputs change.
     """
-    from solidification_tool.core.pipeline import get_heat_transfer
+    from solidification_tool.core.engine import get_heat_transfer
     
     @st.cache_data(show_spinner="Computing heat transfer...")
     def _solve(inputs_hash: str):
@@ -61,7 +61,7 @@ def get_or_run_ims(inputs, V, G):
     Cached IMS solver.
     Depends on composition and alloy parameters.
     """
-    from solidification_tool.core.pipeline import get_ims
+    from solidification_tool.core.engine import get_ims
     
     @st.cache_data(show_spinner="Solving IMS model...")
     def _solve(inputs_hash: str):
@@ -91,14 +91,11 @@ def get_or_run_stability_and_fits(inputs, ims_results, wanted_g):
     """
     Cached stability extraction and power law fitting.
     """
-    from solidification_tool.core.pipeline import (
-        extract_stability_boundaries,
-        get_ims_power_laws
-    )
+    from solidification_tool.core.engine import get_ims_power_laws, get_stability_boundaries
     
     @st.cache_data(show_spinner="Extracting stability boundaries...")
     def _solve(inputs_hash: str):
-        G_out, V_planar, V_dend = extract_stability_boundaries(ims_results)
+        G_out, V_planar, V_dend = get_stability_boundaries(ims_results)
         fit_ims_results = get_ims_power_laws(ims_results, wanted_g)
         return G_out, V_planar, V_dend, fit_ims_results
     
@@ -130,7 +127,7 @@ def get_or_run_pdas(inputs, V_planar, V_dend, fit_ims_results):
     """
     Cached PDAS solver.
     """
-    from solidification_tool.core.pipeline import get_pdas
+    from solidification_tool.core.engine import get_pdas
     
     @st.cache_data(show_spinner="Computing PDAS...")
     def _solve(inputs_hash: str):
@@ -153,15 +150,15 @@ def get_or_run_pdas(inputs, V_planar, V_dend, fit_ims_results):
     return st.session_state.pdas_results
 
 
-def get_or_run_sdas(inputs, V_planar, V_dend, G_out):
+def get_or_run_sdas(inputs, V_planar, V_dend):
     """
     Cached SDAS solver.
     """
-    from solidification_tool.core.pipeline import get_sdas
+    from solidification_tool.core.engine import get_sdas
     
     @st.cache_data(show_spinner="Computing SDAS...")
     def _solve(inputs_hash: str):
-        return get_sdas(inputs, V_planar, V_dend, G_out)
+        return get_sdas(inputs, V_planar, V_dend)
     
     inputs_hash = hash_inputs({
         "C_0": str(inputs.C_0),
@@ -172,7 +169,6 @@ def get_or_run_sdas(inputs, V_planar, V_dend, G_out):
         "Gamma": inputs.Gamma,
         "NonEq_Freezing_range": inputs.NonEq_Freezing_range,
         "V_range": (float(np.min(V_planar)), float(np.max(V_dend))),
-        "G_out_range": (float(np.min(G_out)), float(np.max(G_out))),
     })
     
     if "last_sdas_hash" not in st.session_state:
@@ -190,7 +186,7 @@ def get_or_run_cet(inputs, fit_ims_results, V_planar, V_dend, G_out):
     """
     Cached CET solver.
     """
-    from solidification_tool.core.pipeline import get_cet
+    from solidification_tool.core.engine import get_cet
     
     @st.cache_data(show_spinner="Computing CET...")
     def _solve(inputs_hash: str):
