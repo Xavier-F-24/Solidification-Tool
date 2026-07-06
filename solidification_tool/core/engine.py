@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from dataclasses import asdict
+
 import numpy as np
 
 from solidification_tool.CET_model.cet import solve_cet
@@ -74,6 +76,8 @@ def run_simulation(
     validate_settings(settings)
 
     metadata = RunMetadata.create(run_name=run_name, notes=notes)
+    metadata_dict = metadata.__dict__
+    metadata_dict["engine_settings"] = asdict(settings)
 
     v, g = get_heat_transfer(inputs, settings=settings)
     ims_results = get_ims(inputs, settings=settings)
@@ -92,7 +96,7 @@ def run_simulation(
 
     return SimulationResults(
         inputs=inputs.to_dict(),
-        metadata=metadata.__dict__,
+        metadata=metadata_dict,
         V=v,
         G=g,
         ims=ims_results,

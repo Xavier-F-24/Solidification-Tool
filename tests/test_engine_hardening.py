@@ -5,6 +5,7 @@ import unittest
 import numpy as np
 
 from solidification_tool.app_api import (
+    EngineComputationError,
     EngineSettings,
     EngineInputError,
     get_default_inputs,
@@ -13,6 +14,7 @@ from solidification_tool.app_api import (
     save_run,
 )
 from solidification_tool.core.results import ImsPowerLawFit, SimulationResults, StabilityBoundaries
+from solidification_tool.PDAS_model.fit_powers import fit_ims_power_laws
 
 
 class EngineValidationTests(unittest.TestCase):
@@ -80,6 +82,8 @@ class EngineRegressionTests(unittest.TestCase):
 
         for key in ["G", "Pe", "R+", "V+", "Total_undercooling", "Stable"]:
             self.assertIn(key, results.ims)
+        for key in ["P_base", "Pe_bounds", "sampling_mode"]:
+            self.assertIn(key, results.ims)
 
         for key in ["G_out", "V_planar", "V_dend"]:
             self.assertIn(key, results.stability)
@@ -93,6 +97,63 @@ class EngineRegressionTests(unittest.TestCase):
         self.assertGreater(len(results.sdas), 0)
         self.assertGreater(len(results.cet), 0)
         self.assertGreater(len(results.phi_list), 0)
+
+    def test_default_legacy_output_numerical_fingerprint(self):
+        results = self.results
+
+        self.assertEqual(results.V.shape, (100,))
+        self.assertEqual(results.ims["G"].shape, (100,))
+        self.assertEqual(results.ims["Pe"].shape, (3, 3000))
+        self.assertEqual(results.ims["R+"].shape, (100, 3000))
+        self.assertEqual(results.ims["V+"].shape, (100, 3, 3000))
+        self.assertEqual(results.ims["sampling_mode"], "legacy")
+        self.assertEqual(results.ims["P_base"].shape, (3000,))
+        self.assertIsNone(results.ims["Pe_bounds"])
+
+        self.assertTrue(np.all(np.diff(results.V) > 0))
+        self.assertTrue(np.all(np.diff(results.ims["G"]) > 0))
+        self.assertEqual(np.count_nonzero(results.ims["Stable"]), 125476)
+        self.assertEqual(results.stability.G_out.shape, (94,))
+
+        np.testing.assert_allclose([np.nanmin(results.V), np.nanmax(results.V)], [1e-6, 1e6])
+        np.testing.assert_allclose(
+            [np.nanmin(results.G), np.nanmax(results.G)],
+            [136.8628196721311, 136862819672131.12],
+        )
+        np.testing.assert_allclose(
+            [
+                results.fit_ims.alpha1,
+                results.fit_ims.beta1,
+                results.fit_ims.R2_radius,
+                results.fit_ims.alpha2,
+                results.fit_ims.beta2,
+                results.fit_ims.R2_undercooling,
+            ],
+            [
+                7.573924908807277e-08,
+                -0.4767301821392265,
+                0.9939267709884884,
+                33.521622048506046,
+                0.2665956848499376,
+                0.9962952298438021,
+            ],
+            rtol=1e-12,
+        )
+
+    def test_default_outputs_are_physically_positive_where_finite(self):
+        results = self.results
+
+        for key in ["R+", "V+", "Total_undercooling", "Curvature_undercooling"]:
+            values = results.ims[key]
+            finite = values[np.isfinite(values)]
+            self.assertGreater(finite.size, 0)
+            self.assertTrue(np.all(finite > 0), key)
+
+        self.assertTrue(np.all(results.stability.G_out > 0))
+        self.assertTrue(np.all(results.stability.V_planar > 0))
+        self.assertTrue(np.all(results.stability.V_dend > 0))
+        self.assertGreater(results.fit_ims.R2_radius, 0.99)
+        self.assertGreater(results.fit_ims.R2_undercooling, 0.99)
 
     def test_save_load_round_trip_preserves_result_sections(self):
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -128,6 +189,88 @@ class EngineRegressionTests(unittest.TestCase):
         self.assertEqual(len(results.pdas), 4)
         self.assertEqual(len(results.sdas), 4)
         self.assertEqual(results.phi_list, [0.01])
+
+    def test_adaptive_ims_sampling_preserves_rectangular_contract(self):
+        settings = EngineSettings(
+            heat_v_count=12,
+            ims_g_count=12,
+            ims_pe_count=240,
+            ims_sampling_mode="adaptive",
+            spacing_count=4,
+            spacing_v_count=15,
+            cet_v_count=12,
+            cet_phi_values=(0.01,),
+        )
+
+        results = run_model(get_default_inputs(), settings=settings)
+
+        self.assertEqual(results.ims["sampling_mode"], "adaptive")
+        self.assertEqual(results.ims["G"].shape, (12,))
+        self.assertEqual(results.ims["Pe"].shape, (12, 3, 240))
+        self.assertEqual(results.ims["P_base"].shape, (12, 240))
+        self.assertEqual(results.ims["Pe_bounds"].shape, (12, 2))
+        self.assertGreater(np.count_nonzero(results.ims["Stable"]), 0)
+        self.assertEqual(results.metadata["engine_settings"]["ims_sampling_mode"], "adaptive")
+
+        finite_bounds = results.ims["Pe_bounds"][np.isfinite(results.ims["Pe_bounds"][:, 0])]
+        self.assertGreater(len(finite_bounds), 0)
+        self.assertTrue(np.all(finite_bounds[:, 0] <= finite_bounds[:, 1]))
+        self.assertGreater(results.fit_ims.R2_radius, 0.99)
+        self.assertGreater(results.fit_ims.R2_undercooling, 0.99)
+
+    def test_adaptive_and_legacy_reduced_settings_agree_broadly(self):
+        common = dict(
+            heat_v_count=12,
+            ims_g_count=12,
+            ims_pe_count=240,
+            spacing_count=4,
+            spacing_v_count=15,
+            cet_v_count=12,
+        )
+        legacy = run_model(get_default_inputs(), settings=EngineSettings(**common))
+        adaptive = run_model(
+            get_default_inputs(),
+            settings=EngineSettings(**common, ims_sampling_mode="adaptive"),
+        )
+
+        self.assertEqual(len(legacy.stability.G_out), len(adaptive.stability.G_out))
+        np.testing.assert_allclose(adaptive.fit_ims.alpha1, legacy.fit_ims.alpha1, rtol=0.05)
+        np.testing.assert_allclose(adaptive.fit_ims.beta1, legacy.fit_ims.beta1, rtol=0.05)
+        np.testing.assert_allclose(adaptive.fit_ims.alpha2, legacy.fit_ims.alpha2, rtol=0.05)
+        np.testing.assert_allclose(adaptive.fit_ims.beta2, legacy.fit_ims.beta2, rtol=0.05)
+
+    def test_invalid_sampling_mode_fails(self):
+        settings = EngineSettings(ims_sampling_mode="dense-ish")
+
+        with self.assertRaisesRegex(EngineInputError, "ims_sampling_mode"):
+            run_model(get_default_inputs(), settings=settings)
+
+    def test_adaptive_ims_without_valid_window_fails_clearly(self):
+        settings = EngineSettings(
+            ims_sampling_mode="adaptive",
+            ims_g_min_exp=20,
+            ims_g_max_exp=21,
+            ims_g_count=3,
+            ims_pe_count=20,
+            heat_v_count=5,
+            spacing_count=3,
+            spacing_v_count=5,
+            cet_v_count=5,
+        )
+
+        with self.assertRaisesRegex(EngineComputationError, "no valid Peclet window"):
+            run_model(get_default_inputs(), settings=settings)
+
+    def test_ims_power_law_fit_rejects_nonpositive_log_domain(self):
+        ims_results = {
+            "G": np.array([1.0]),
+            "V+": np.array([[[1.0, 2.0, -3.0, np.nan]]]),
+            "R+": np.array([[1.0, 0.5, 0.25, np.nan]]),
+            "Total_undercooling": np.array([[1.0, 0.0, 2.0, np.nan]]),
+        }
+
+        with self.assertRaisesRegex(EngineComputationError, "finite positive points"):
+            fit_ims_power_laws(ims_results, 1.0)
 
 
 if __name__ == "__main__":

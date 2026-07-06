@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any
 
 from solidification_tool.core.inputs import SolidificationInputs
 from solidification_tool.core.settings import EngineSettings
-from solidification_tool.core.validation import EngineInputError
+from solidification_tool.core.validation import EngineComputationError, EngineInputError
 
 if TYPE_CHECKING:
     from solidification_tool.core.results import SimulationResults

@@ -8,6 +8,10 @@ class EngineInputError(ValueError):
     pass
 
 
+class EngineComputationError(RuntimeError):
+    pass
+
+
 def _is_positive_number(value) -> bool:
     return isinstance(value, (int, float)) and math.isfinite(value) and value > 0
 
@@ -86,6 +90,9 @@ def validate_settings(settings: EngineSettings) -> None:
         high = getattr(settings, high_name)
         if not (math.isfinite(low) and math.isfinite(high) and low < high):
             raise EngineInputError(f"{low_name} must be less than {high_name}.")
+
+    if settings.ims_sampling_mode not in {"legacy", "adaptive"}:
+        raise EngineInputError("ims_sampling_mode must be 'legacy' or 'adaptive'.")
 
     if len(settings.cet_phi_values) == 0:
         raise EngineInputError("cet_phi_values must be non-empty.")

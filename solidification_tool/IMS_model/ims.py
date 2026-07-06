@@ -1,138 +1,166 @@
 """
-Ivantsov Multiple Solutes undercooling model
+Ivantsov multiple-solute undercooling model.
 """
 
 import numpy as np
 
 from solidification_tool.IMS_model.ivantsov import Ivantsov
 from solidification_tool.core.settings import EngineSettings
+from solidification_tool.core.validation import EngineComputationError
+
+
+def _compute_solutal_stability_term(C_0, k, m, Pe):
+    """Return liquid composition response and the solutal stability term."""
+    Iv = Ivantsov(Pe)
+
+    k3 = k[None, :, :]
+    m3 = m[None, :, :]
+    C03 = C_0[None, :, :]
+
+    eta = 1 - (2 * k3) / (
+        2 * k3 - 1 + np.sqrt(1 + (2 * np.pi / Pe) ** 2)
+    )
+    c_l_star = C03 / (1 - (1 - k3) * Iv)
+    s_term = m3 * Pe * (1 - k3) * c_l_star * eta
+
+    return c_l_star, s_term
+
+
+def _legacy_peclet_grid(D, settings: EngineSettings):
+    """Construct the original solute-scaled Peclet grid."""
+    p_base = np.logspace(settings.ims_pe_min_exp, settings.ims_pe_max_exp, settings.ims_pe_count)
+    d_ref = D[0, 0]
+    scale = d_ref / D
+    pe = scale * p_base[None, :]
+    return p_base, pe[None, :, :], None
+
+
+def _adaptive_peclet_grid(C_0, k, m, D, Gamma, G_values, settings: EngineSettings):
+    """
+    Construct a per-gradient Peclet grid from stability-discriminant windows.
+
+    The marginal-stability quadratic has real roots only when
+    B(Pe)^2 - 4*A*G > 0. Adaptive mode probes that discriminant on the legacy
+    grid, then resamples each gradient row over its valid Peclet interval while
+    preserving rectangular arrays for downstream consumers.
+    """
+    p_probe, pe_probe, _ = _legacy_peclet_grid(D, settings)
+    _, s_probe = _compute_solutal_stability_term(C_0, k, m, pe_probe)
+
+    a_term = 4 * np.pi**2 * Gamma
+    b_probe = 2 * np.sum(s_probe, axis=1)
+    disc_probe = b_probe[:, None, :] ** 2 - 4 * a_term * G_values[:, None, None]
+    valid_probe = disc_probe[:, 0, :] > 0
+
+    if not np.any(valid_probe):
+        raise EngineComputationError(
+            "IMS adaptive sampling found no valid Peclet window for the requested G range."
+        )
+
+    p_rows = np.empty((len(G_values), settings.ims_pe_count), dtype=float)
+    bounds = np.full((len(G_values), 2), np.nan, dtype=float)
+
+    for idx, row_valid in enumerate(valid_probe):
+        if np.any(row_valid):
+            p_min = p_probe[row_valid][0]
+            p_max = p_probe[row_valid][-1]
+            bounds[idx] = (p_min, p_max)
+            if p_min == p_max:
+                p_rows[idx] = p_min
+            else:
+                p_rows[idx] = np.logspace(np.log10(p_min), np.log10(p_max), settings.ims_pe_count)
+        else:
+            p_rows[idx] = p_probe
+
+    d_ref = D[0, 0]
+    scale = (d_ref / D).reshape(1, D.shape[0], 1)
+    pe = scale * p_rows[:, None, :]
+    return p_rows, pe, bounds
 
 
 def solve_ims(inputs, settings: EngineSettings | None = None):
     """
-    Multi-solute Ivantsov + marginal stability solver (vectorized in G).
+    Multi-solute Ivantsov plus marginal-stability solver.
 
-    Axis convention (STRICT):
-        Axis 0 -> Thermal gradient G
-        Axis 1 -> Solute index
-        Axis 2 -> Peclet number
-
-    All internal arrays respect (n_G, n_solute, n_Pe)
-
-    Written Jan 2026, XF
+    Axis convention:
+        Axis 0 -> thermal gradient G [K/m]
+        Axis 1 -> solute index
+        Axis 2 -> Peclet number Pe [-]
     """
-
     settings = settings or EngineSettings()
 
-    # --------------------------------------------------
-    # Unpack inputs
-    # --------------------------------------------------
-    C_0 = np.atleast_1d(inputs.C_0)[:, None]    # (n_solute, 1)
-    k   = np.atleast_1d(inputs.k)[:, None]
-    m   = np.atleast_1d(inputs.m)[:, None]
-    D   = np.atleast_1d(inputs.D)[:, None]
+    C_0 = np.atleast_1d(inputs.C_0).astype(float)[:, None]
+    k = np.atleast_1d(inputs.k).astype(float)[:, None]
+    m = np.atleast_1d(inputs.m).astype(float)[:, None]
+    D = np.atleast_1d(inputs.D).astype(float)[:, None]
 
-    Gamma = float(inputs.Gamma)
+    gamma = float(inputs.Gamma)
+    g_values = np.logspace(settings.ims_g_min_exp, settings.ims_g_max_exp, settings.ims_g_count)
+    G = g_values[:, None, None]
 
-    G = np.logspace(settings.ims_g_min_exp, settings.ims_g_max_exp, settings.ims_g_count)                     # (n_G,)
-    G = G[:, None, None]                         # (n_G, 1, 1)
+    d_ref = D[0, 0]
+    if settings.ims_sampling_mode == "adaptive":
+        p_base, Pe, pe_bounds = _adaptive_peclet_grid(C_0, k, m, D, gamma, g_values, settings)
+    else:
+        p_base, Pe, pe_bounds = _legacy_peclet_grid(D, settings)
 
-    n_solute = C_0.shape[0]
+    c_l_star, s_term = _compute_solutal_stability_term(C_0, k, m, Pe)
 
-    # --------------------------------------------------
-    # Peclet construction (solute-scaled)
-    # --------------------------------------------------
+    # Marginal stability quadratic: A/R^2 + B/R + G = 0.
+    a_term = 4 * np.pi**2 * gamma
+    b_term = 2 * np.sum(s_term, axis=1)
+    b_term = b_term[:, None, :]
 
-    # Scaled Peclet range for useful stability sampling.
-    P = np.logspace(settings.ims_pe_min_exp, settings.ims_pe_max_exp, settings.ims_pe_count)                 # (n_Pe,)
-
-    D_ref = D[0, 0]
-    scale = D_ref / D                            # (n_solute, 1)
-
-    Pe = scale * P[None, :]                      # (n_solute, n_Pe)
-    Pe = Pe[None, :, :]                          # (1, n_solute, n_Pe)
-
-    # --------------------------------------------------
-    # Ivantsov + solutal response
-    # --------------------------------------------------
-    Iv = Ivantsov(Pe)                            # (1, n_solute, n_Pe)
-
-    k3  = k[None, :, :]
-    m3  = m[None, :, :]
-    C03 = C_0[None, :, :]
-
-    Eta = 1 - (2 * k3) / (
-        2 * k3 - 1 + np.sqrt(1 + (2 * np.pi / Pe)**2)
-    )
-
-    C_l_star = C03 / (1 - (1 - k3) * Iv)
-
-    # Solutal term inside stability equation
-    S = m3 * Pe * (1 - k3) * C_l_star * Eta       # (1, n_solute, n_Pe)
-
-    # --------------------------------------------------
-    # Marginal stability quadratic
-    # A/R² + B/R + G = 0
-    # --------------------------------------------------
-    A = 4 * np.pi**2 * Gamma                     # scalar
-
-    B = 2 * np.sum(S, axis=1)                    # (1, n_Pe)
-    B = B[None, :, :]                            # (1, 1, n_Pe)
-
-    disc = B**2 - 4 * A * G                      # (n_G, 1, n_Pe)
+    disc = b_term**2 - 4 * a_term * G
     valid = disc > 0
 
-    Quad_plus  = np.full_like(disc, np.nan)
-    Quad_minus = np.full_like(disc, np.nan)
+    quad_plus = np.full_like(disc, np.nan)
+    quad_minus = np.full_like(disc, np.nan)
 
     sqrt_disc = np.zeros_like(disc)
     sqrt_disc[valid] = np.sqrt(disc[valid])
 
-    Quad_plus[valid]  = (-B + sqrt_disc)[valid] / (2 * A)
-    Quad_minus[valid] = (-B - sqrt_disc)[valid] / (2 * A)
+    quad_plus[valid] = (-b_term + sqrt_disc)[valid] / (2 * a_term)
+    quad_minus[valid] = (-b_term - sqrt_disc)[valid] / (2 * a_term)
 
-    # --------------------------------------------------
-    # Tip radius
-    # --------------------------------------------------
-    R_plus  = 1 / Quad_plus                      # (n_G, 1, n_Pe)
-    R_minus = 1 / Quad_minus
+    R_plus = 1 / quad_plus
+    R_minus = 1 / quad_minus
 
-    R_plus  = R_plus[:, 0, :]                    # (n_G, n_Pe)
+    R_plus = R_plus[:, 0, :]
     R_minus = R_minus[:, 0, :]
 
-    # --------------------------------------------------
-    # Tip velocity (reference diffusivity)
-    # --------------------------------------------------
-    V_plus  = 2 * D_ref * Pe / R_plus[:, None, :]
-    V_minus = 2 * D_ref * Pe / R_minus[:, None, :]
+    V_plus = 2 * d_ref * Pe / R_plus[:, None, :]
+    V_minus = 2 * d_ref * Pe / R_minus[:, None, :]
 
-    # --------------------------------------------------
-    # Undercooling components
-    # --------------------------------------------------
-    Solute_undercooling = m3 * (C03 - C_l_star)      # (1, n_solute, n_Pe)
+    m3 = m[None, :, :]
+    C03 = C_0[None, :, :]
+    solute_undercooling = m3 * (C03 - c_l_star)
 
-    DeltaT_solute = np.sum(Solute_undercooling, axis=1)  # (1, n_Pe)
-    DeltaT_solute = DeltaT_solute[None, :, :]        # (1, 1, n_Pe)
+    delta_t_solute = np.sum(solute_undercooling, axis=1)
+    delta_t_solute = delta_t_solute[:, None, :]
 
     R_tip = np.minimum(R_plus, R_minus)
-    Curvature_undercooling = 2 * Gamma / R_tip       # (n_G, n_Pe)
+    curvature_undercooling = 2 * gamma / R_tip
+    total_undercooling = delta_t_solute + curvature_undercooling[:, None, :]
+    total_undercooling = total_undercooling[:, 0, :]
 
-    Total_undercooling = DeltaT_solute + Curvature_undercooling[:, None, :]
-    Total_undercooling = Total_undercooling[:, 0, :] # (n_G, n_Pe)
+    pe_out = Pe[0] if Pe.shape[0] == 1 else Pe
+    solute_undercooling_out = (
+        solute_undercooling[0] if solute_undercooling.shape[0] == 1 else solute_undercooling
+    )
 
-    # --------------------------------------------------
-    # Output
-    # --------------------------------------------------
     return {
-        
-        "G": G[:, 0, 0],                              # (n_G,)
-        "Pe": Pe[0],                                  # (n_solute, n_Pe)
-        "R+": R_plus,                                 # (n_G, n_Pe)
+        "G": g_values,
+        "Pe": pe_out,
+        "P_base": p_base,
+        "Pe_bounds": pe_bounds,
+        "sampling_mode": settings.ims_sampling_mode,
+        "R+": R_plus,
         "R-": R_minus,
-        "V+": V_plus,                                 # (n_G, n_Pe)
-        "V-": V_minus,                                # (n_G, n_Pe)
-        "Total_undercooling": Total_undercooling,     # (n_G, n_Pe)
-        "Stable": valid[:, 0, :],                     # (n_G, n_Pe)
-        "Solute_undercooling": Solute_undercooling[0],
-        "Curvature_undercooling": Curvature_undercooling
+        "V+": V_plus,
+        "V-": V_minus,
+        "Total_undercooling": total_undercooling,
+        "Stable": valid[:, 0, :],
+        "Solute_undercooling": solute_undercooling_out,
+        "Curvature_undercooling": curvature_undercooling,
     }
