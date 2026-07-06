@@ -19,7 +19,7 @@ class SolidificationInputs:
     C_f : list       # solute concentrations in alloy end solid [wt%]
     k : list         # partition coefficient (local) [-]
     m : list         # liquidus slopes (local) [K / wt%]
-    D : list         # diffusivity [something, Xavier forgets]
+    D : list         # diffusivity [m^2/s]
     Gamma : float    # given value [-]
 
     # --------------------------------------------------

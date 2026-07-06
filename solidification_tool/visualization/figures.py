@@ -8,7 +8,6 @@ from matplotlib.lines import Line2D
 from solidification_tool.CET_visuals.cet_plot import plot_cet
 from solidification_tool.IMS_visuals.V_R_plots import plot_V_R
 from solidification_tool.IMS_visuals.stability_plots import dendritic_stability_edges
-from solidification_tool.PDAS_model.fit_powers import fit_ims_power_laws
 from solidification_tool.PDAS_visuals.pdas_fits import plot_fits
 from solidification_tool.PDAS_visuals.pdas_plot import plot_pdas
 from solidification_tool.SDAS_visuals.sdas_plot import plot_sdas
@@ -162,7 +161,7 @@ def show_all(
 
     figs["ims_fits"] = show_power_law_fits(
         results.ims,
-        fit_ims_power_laws(results.ims, Wanted_G),
+        results.fit_ims,
         Wanted_G,
         fig_size,
     )
@@ -228,4 +227,3 @@ def add_pdas_sdas_legend(color_map, shown_spacings):
         )
 
     plt.legend(handles=handles, title="Spacing scale & model", frameon=False, fontsize=9)
-

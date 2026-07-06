@@ -100,7 +100,13 @@ class ArchitectureBoundaryTests(unittest.TestCase):
 
         self.assertEqual([], violations)
 
+    def test_streamlit_caching_uses_public_engine_settings(self):
+        path = PACKAGE_ROOT / "streamlit_app" / "caching.py"
+        source = path.read_text(encoding="utf-8")
+
+        self.assertIn("from solidification_tool.app_api import EngineSettings, SolidificationInputs, run_model", source)
+        self.assertIn("settings=EngineSettings(**engine_settings_payload)", source)
+
 
 if __name__ == "__main__":
     unittest.main()
-
