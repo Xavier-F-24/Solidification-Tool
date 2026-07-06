@@ -77,9 +77,7 @@ def solve_cet(inputs, V_min, V_max, fit_ims_results, G_out, settings: EngineSett
     if not np.isfinite(alpha2) or alpha2 <= 0 or not np.isfinite(beta2) or beta2 <= 0:
         raise EngineComputationError("CET requires positive finite IMS undercooling fit coefficients.")
     
-    # --------------------------------------------------
-    # Lets solve
-    # --------------------------------------------------
+    # CET exponent inferred from the IMS undercooling power-law fit.
     n = 1 / beta2
 
     # --------------------------------------------------

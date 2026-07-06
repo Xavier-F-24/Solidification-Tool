@@ -20,7 +20,7 @@ class SolidificationInputs:
     k : list         # partition coefficient (local) [-]
     m : list         # liquidus slopes (local) [K / wt%]
     D : list         # diffusivity [m^2/s]
-    Gamma : float    # given value [-]
+    Gamma : float    # Gibbs-Thomson coefficient [K-m]
 
     # --------------------------------------------------
     # PDAS inputs

@@ -1,3 +1,9 @@
+"""Deprecated scratch module retained only for historical reference.
+
+The active scientific engine lives under ``solidification_tool.core`` and the
+``*_model`` packages. This file contains old exploratory code and must not be
+imported by application or engine paths.
+"""
 
 """
 def solve_ims1(inputs):

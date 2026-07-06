@@ -12,6 +12,7 @@ from solidification_tool.PDAS_model.pdas import solve_pdas
 from solidification_tool.SDAS_model.sdas import solve_sdas
 from solidification_tool.core.defaults import get_inputs
 from solidification_tool.core.inputs import SolidificationInputs
+from solidification_tool.core.model_manifest import model_manifest_summary
 from solidification_tool.core.results import SimulationResults, StabilityBoundaries
 from solidification_tool.core.settings import EngineSettings
 from solidification_tool.core.validation import validate_inputs, validate_settings
@@ -78,6 +79,7 @@ def run_simulation(
     metadata = RunMetadata.create(run_name=run_name, notes=notes)
     metadata_dict = metadata.__dict__
     metadata_dict["engine_settings"] = asdict(settings)
+    metadata_dict["model_manifest"] = model_manifest_summary()
 
     v, g = get_heat_transfer(inputs, settings=settings)
     ims_results = get_ims(inputs, settings=settings)
