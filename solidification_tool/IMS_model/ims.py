@@ -3,6 +3,7 @@ Ivantsov multiple-solute undercooling model.
 """
 
 import numpy as np
+from scipy.optimize import brentq
 
 from solidification_tool.IMS_model.ivantsov import Ivantsov
 from solidification_tool.core.settings import EngineSettings
@@ -35,14 +36,67 @@ def _legacy_peclet_grid(D, settings: EngineSettings):
     return p_base, pe[None, :, :], None
 
 
+def _discriminant_for_base_peclet(p_base, C_0, k, m, D, Gamma, G_value):
+    p_base = np.atleast_1d(p_base).astype(float)
+    d_ref = D[0, 0]
+    scale = d_ref / D
+    pe = scale * p_base[None, :]
+    pe = pe[None, :, :]
+
+    _, s_term = _compute_solutal_stability_term(C_0, k, m, pe)
+    a_term = 4 * np.pi**2 * Gamma
+    b_term = 2 * np.sum(s_term, axis=1)
+    disc = b_term[0] ** 2 - 4 * a_term * G_value
+    return disc[0] if disc.shape == (1,) else disc
+
+
+def _refine_bound(left_p, right_p, C_0, k, m, D, Gamma, G_value):
+    left_disc = _discriminant_for_base_peclet(left_p, C_0, k, m, D, Gamma, G_value)
+    right_disc = _discriminant_for_base_peclet(right_p, C_0, k, m, D, Gamma, G_value)
+
+    if left_disc == 0:
+        return left_p
+    if right_disc == 0:
+        return right_p
+    if np.sign(left_disc) == np.sign(right_disc):
+        return right_p if right_disc > 0 else left_p
+
+    return brentq(
+        lambda p: _discriminant_for_base_peclet(p, C_0, k, m, D, Gamma, G_value),
+        left_p,
+        right_p,
+        xtol=1e-14,
+        rtol=1e-12,
+        maxiter=100,
+    )
+
+
+def _refined_valid_bounds(p_probe, row_valid, C_0, k, m, D, Gamma, G_value):
+    valid_idx = np.flatnonzero(row_valid)
+    first = valid_idx[0]
+    last = valid_idx[-1]
+
+    if first == 0:
+        p_min = p_probe[0]
+    else:
+        p_min = _refine_bound(p_probe[first - 1], p_probe[first], C_0, k, m, D, Gamma, G_value)
+
+    if last == len(p_probe) - 1:
+        p_max = p_probe[-1]
+    else:
+        p_max = _refine_bound(p_probe[last], p_probe[last + 1], C_0, k, m, D, Gamma, G_value)
+
+    return p_min, p_max
+
+
 def _adaptive_peclet_grid(C_0, k, m, D, Gamma, G_values, settings: EngineSettings):
     """
     Construct a per-gradient Peclet grid from stability-discriminant windows.
 
     The marginal-stability quadratic has real roots only when
     B(Pe)^2 - 4*A*G > 0. Adaptive mode probes that discriminant on the legacy
-    grid, then resamples each gradient row over its valid Peclet interval while
-    preserving rectangular arrays for downstream consumers.
+    grid, refines the valid-window edges with scalar root solves, then resamples
+    each gradient row while preserving rectangular arrays for downstream consumers.
     """
     p_probe, pe_probe, _ = _legacy_peclet_grid(D, settings)
     _, s_probe = _compute_solutal_stability_term(C_0, k, m, pe_probe)
@@ -62,8 +116,16 @@ def _adaptive_peclet_grid(C_0, k, m, D, Gamma, G_values, settings: EngineSetting
 
     for idx, row_valid in enumerate(valid_probe):
         if np.any(row_valid):
-            p_min = p_probe[row_valid][0]
-            p_max = p_probe[row_valid][-1]
+            p_min, p_max = _refined_valid_bounds(
+                p_probe,
+                row_valid,
+                C_0,
+                k,
+                m,
+                D,
+                Gamma,
+                G_values[idx],
+            )
             bounds[idx] = (p_min, p_max)
             if p_min == p_max:
                 p_rows[idx] = p_min
@@ -154,6 +216,7 @@ def solve_ims(inputs, settings: EngineSettings | None = None):
         "Pe": pe_out,
         "P_base": p_base,
         "Pe_bounds": pe_bounds,
+        "Pe_bounds_source": "refined_discriminant_roots" if settings.ims_sampling_mode == "adaptive" else None,
         "sampling_mode": settings.ims_sampling_mode,
         "R+": R_plus,
         "R-": R_minus,
