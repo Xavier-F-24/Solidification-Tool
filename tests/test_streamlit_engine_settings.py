@@ -34,6 +34,14 @@ class StreamlitEngineSettingsTests(unittest.TestCase):
         self.assertEqual(settings.spacing_v_count, 15)
         self.assertEqual(settings.cet_v_count, 12)
 
+    def test_engine_exponent_widget_defaults_are_float_cast(self):
+        source = (REPO_ROOT / "solidification_tool" / "streamlit_app" / "inputs_ui.py").read_text(
+            encoding="utf-8"
+        )
+
+        for key in ["ims_g_min_exp", "ims_g_max_exp", "ims_pe_min_exp", "ims_pe_max_exp"]:
+            self.assertIn(f'value=float(st.session_state.get("{key}"', source)
+
     def test_cache_payload_changes_when_engine_settings_change(self):
         inputs_payload = get_default_inputs().to_dict()
         legacy = settings_to_payload(EngineSettings())

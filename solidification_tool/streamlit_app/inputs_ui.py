@@ -272,14 +272,14 @@ def render_sidebar():
                     "IMS G min exponent",
                     min_value=-12.0,
                     max_value=12.0,
-                    value=st.session_state.get("ims_g_min_exp", defaults.ims_g_min_exp),
+                    value=float(st.session_state.get("ims_g_min_exp", defaults.ims_g_min_exp)),
                     step=1.0,
                 )
                 st.session_state.ims_pe_min_exp = st.number_input(
                     "IMS Pe min exponent",
                     min_value=-12.0,
                     max_value=12.0,
-                    value=st.session_state.get("ims_pe_min_exp", defaults.ims_pe_min_exp),
+                    value=float(st.session_state.get("ims_pe_min_exp", defaults.ims_pe_min_exp)),
                     step=1.0,
                 )
                 st.session_state.spacing_count = st.number_input(
@@ -302,14 +302,14 @@ def render_sidebar():
                     "IMS G max exponent",
                     min_value=-12.0,
                     max_value=12.0,
-                    value=st.session_state.get("ims_g_max_exp", defaults.ims_g_max_exp),
+                    value=float(st.session_state.get("ims_g_max_exp", defaults.ims_g_max_exp)),
                     step=1.0,
                 )
                 st.session_state.ims_pe_max_exp = st.number_input(
                     "IMS Pe max exponent",
                     min_value=-12.0,
                     max_value=12.0,
-                    value=st.session_state.get("ims_pe_max_exp", defaults.ims_pe_max_exp),
+                    value=float(st.session_state.get("ims_pe_max_exp", defaults.ims_pe_max_exp)),
                     step=1.0,
                 )
                 st.session_state.spacing_v_count = st.number_input(
