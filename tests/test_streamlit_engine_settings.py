@@ -1,7 +1,7 @@
 import pathlib
 import unittest
 
-from solidification_tool.app_api import EngineSettings, get_default_inputs, run_model
+from solidification_tool.app_api import EngineSettings, PlotSettings, build_figures, get_default_inputs, run_model
 from solidification_tool.streamlit_app.caching import hash_simulation_payload, settings_to_payload
 from solidification_tool.streamlit_app.inputs_ui import create_engine_settings_from_state
 
@@ -78,6 +78,26 @@ class StreamlitEngineSettingsTests(unittest.TestCase):
         self.assertEqual(results.ims["sampling_mode"], "adaptive")
         self.assertEqual(results.metadata["engine_settings"]["ims_sampling_mode"], "adaptive")
         self.assertGreater(results.ims["Stable"].sum(), 0)
+
+    def test_adaptive_streamlit_settings_build_figures(self):
+        settings = create_engine_settings_from_state(
+            {
+                "heat_v_count": 12,
+                "ims_g_count": 12,
+                "ims_pe_count": 120,
+                "ims_sampling_mode": "adaptive",
+                "spacing_count": 4,
+                "spacing_v_count": 15,
+                "cet_v_count": 12,
+                "cet_phi_values": (0.01,),
+            }
+        )
+        results = run_model(get_default_inputs(), settings=settings)
+
+        figures = build_figures(results, PlotSettings(wanted_g=1e5))
+
+        self.assertIn("ims", figures)
+        self.assertEqual(len(figures["ims"]), 2)
 
 
 if __name__ == "__main__":

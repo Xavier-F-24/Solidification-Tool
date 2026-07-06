@@ -3,6 +3,14 @@ import numpy as np
 
 from solidification_tool.io_utils.monotonic import monotonic_display_xy
 
+
+def _solute_undercooling_at_g(solute_undercooling, idx):
+    values = np.asarray(solute_undercooling)
+    if values.ndim == 3:
+        return values[idx]
+    return values
+
+
 def spacing_to_color(spacings):
     unique = sorted(set(spacings))
 
@@ -62,11 +70,12 @@ def plot_V_R(ims_results, Wanted_G, fig_size, plot_range = False, G_range = (1e-
     # Plotting V versus solute undercooling
     # --------------------------------------------------
     fig_cool, ax2 = plt.subplots(figsize = fig_size)
-    solute_colors = spacing_to_color(np.linspace(0,len(Solute_undercooling)-1, len(Solute_undercooling)))
+    solute_undercooling_at_g = _solute_undercooling_at_g(Solute_undercooling, idx)
+    solute_colors = spacing_to_color(np.linspace(0,len(solute_undercooling_at_g)-1, len(solute_undercooling_at_g)))
 
-    for j in range(len(Solute_undercooling)):
+    for j in range(len(solute_undercooling_at_g)):
         color = solute_colors[j]
-        V_solute_i, solute_i = monotonic_display_xy(V_plus[idx][0], Solute_undercooling[j])
+        V_solute_i, solute_i = monotonic_display_xy(V_plus[idx][0], solute_undercooling_at_g[j])
         ax2.semilogx(V_solute_i, solute_i, label=f"Solute {j+1}", color = color, linestyle = "-", linewidth = 2)
     V_total, total_cool = monotonic_display_xy(V_plus[idx][0], Total_undercooling[idx])
     ax2.semilogx(V_total, total_cool, label="Total Undercooling", color = "black", linestyle = "-", linewidth = 2)
