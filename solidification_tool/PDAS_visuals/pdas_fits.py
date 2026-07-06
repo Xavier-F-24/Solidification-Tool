@@ -6,10 +6,10 @@ from solidification_tool.io_utils.monotonic import monotonic_display_xy
 
 def plot_fits(ims_results, fit_ims_results, Wanted_G, fig_size):
 
-    G = ims_results["G"]
-    V = ims_results["V+"]
-    R = ims_results["R+"]
-    Total_undercooling = ims_results["Total_undercooling"]
+    G = ims_results.G
+    V = ims_results.V_plus
+    R = ims_results.R_plus
+    Total_undercooling = ims_results.Total_undercooling
 
     alpha1 = fit_ims_results["alpha1"]
     beta1 = fit_ims_results["beta1"]

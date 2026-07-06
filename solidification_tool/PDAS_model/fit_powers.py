@@ -1,6 +1,7 @@
 import numpy as np
 
 from solidification_tool.core.results import ImsPowerLawFit
+from solidification_tool.core.results import ImsResults
 from solidification_tool.core.validation import EngineComputationError
 from solidification_tool.io_utils.analysis_utils import r_squared
 
@@ -29,10 +30,13 @@ def _require_fit_domain(V, R, Dt):
 
 
 def fit_ims_power_laws(ims_results, Wanted_G):
-    G = ims_results["G"]
-    V = ims_results["V+"]
-    R = ims_results["R+"]
-    total_undercooling = ims_results["Total_undercooling"]
+    if not isinstance(ims_results, ImsResults):
+        ims_results = ImsResults.from_dict(ims_results)
+
+    G = ims_results.G
+    V = ims_results.V_plus
+    R = ims_results.R_plus
+    total_undercooling = ims_results.Total_undercooling
 
     idx = np.argmin(np.abs(G - Wanted_G))
 

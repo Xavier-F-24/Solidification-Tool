@@ -91,8 +91,8 @@ def validate_settings(settings: EngineSettings) -> None:
         if not (math.isfinite(low) and math.isfinite(high) and low < high):
             raise EngineInputError(f"{low_name} must be less than {high_name}.")
 
-    if settings.ims_sampling_mode not in {"legacy", "adaptive"}:
-        raise EngineInputError("ims_sampling_mode must be 'legacy' or 'adaptive'.")
+    if settings.ims_sampling_mode not in {"adaptive", "sweep"}:
+        raise EngineInputError("ims_sampling_mode must be 'adaptive' or 'sweep'.")
 
     if len(settings.cet_phi_values) == 0:
         raise EngineInputError("cet_phi_values must be non-empty.")

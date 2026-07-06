@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.optimize import brentq
 from solidification_tool.core.settings import EngineSettings
+from solidification_tool.core.validation import EngineComputationError
 
 def solve_V_for_G(
     G_out,
@@ -12,10 +13,17 @@ def solve_V_for_G(
     N0,
     phi,
     V_min = 1e-12,
-    V_max = 1e6 ):
+    V_max = 1e6,
+    max_expansions = 20 ):
     """
     Solve for V such that CET G(V) = G_out.
     """
+    if not all(np.isfinite(value) and value > 0 for value in [G_out, alpha, beta, n, DeltaT_nuc, N0, phi, V_min, V_max]):
+        raise EngineComputationError("CET root solve requires positive finite inputs.")
+    if phi >= 1:
+        raise EngineComputationError("CET root solve requires phi to be between 0 and 1.")
+    if V_min >= V_max:
+        raise EngineComputationError("CET root solve requires V_min < V_max.")
 
     # CET prefactor
     A = (1.0 / (n + 1.0)) * (
@@ -32,9 +40,16 @@ def solve_V_for_G(
             - G_out
         )
 
-    # Expand upper bound automatically if needed
-    while f(V_max) < 0:
+    lower = f(V_min)
+    upper = f(V_max)
+    expansions = 0
+    while upper < 0 and expansions < max_expansions:
         V_max *= 10.0
+        upper = f(V_max)
+        expansions += 1
+
+    if not np.isfinite(lower) or not np.isfinite(upper) or lower * upper > 0:
+        raise EngineComputationError("CET could not bracket a transition velocity for the requested G.")
 
     V_root = brentq(f, V_min, V_max)
     return V_root
@@ -55,6 +70,12 @@ def solve_cet(inputs, V_min, V_max, fit_ims_results, G_out, settings: EngineSett
     beta1 = fit_ims_results["beta1"]
     alpha2 = fit_ims_results["alpha2"]
     beta2 = fit_ims_results["beta2"]
+    if not np.isfinite(V_min) or not np.isfinite(V_max) or V_min <= 0 or V_max <= 0 or V_min >= V_max:
+        raise EngineComputationError("CET requires positive finite V_min < V_max.")
+    if len(G_out) == 0 or not np.all(np.isfinite(G_out)) or np.min(G_out) <= 0:
+        raise EngineComputationError("CET requires positive finite stability G values.")
+    if not np.isfinite(alpha2) or alpha2 <= 0 or not np.isfinite(beta2) or beta2 <= 0:
+        raise EngineComputationError("CET requires positive finite IMS undercooling fit coefficients.")
     
     # --------------------------------------------------
     # Lets solve

@@ -177,7 +177,7 @@ if st.session_state.simulation_complete:
             buffer,
             V=st.session_state.results.V,
             G=st.session_state.results.G,
-            ims=st.session_state.results.ims,
+            ims=st.session_state.results.ims.to_dict(),
             fit_ims=st.session_state.results.fit_ims,
         )
         buffer.seek(0)

@@ -1,5 +1,9 @@
 import numpy as np
 
+from solidification_tool.core.results import ImsResults
+from solidification_tool.core.validation import EngineComputationError
+
+
 def extract_stability_boundaries(ims_results):
     """
     Extract planar and dendritic stability boundaries from IMS results.
@@ -9,9 +13,12 @@ def extract_stability_boundaries(ims_results):
         V_planar       : (n,) planar -> cellular boundary
         V_dendritic    : (n,) cellular -> dendritic boundary
     """
-    G = ims_results["G"]
-    V_plus = ims_results["V+"]
-    R_plus = ims_results["R+"]
+    if not isinstance(ims_results, ImsResults):
+        ims_results = ImsResults.from_dict(ims_results)
+
+    G = ims_results.G
+    V_plus = ims_results.V_plus
+    R_plus = ims_results.R_plus
 
     V_planar = []
     V_dend   = []
@@ -21,7 +28,7 @@ def extract_stability_boundaries(ims_results):
         V_i = V_plus[i][0]
         R_i = R_plus[i]
 
-        mask = np.isfinite(V_i) & np.isfinite(R_i)
+        mask = np.isfinite(V_i) & np.isfinite(R_i) & (V_i > 0) & (R_i > 0)
         if not np.any(mask):
             continue
 
@@ -38,6 +45,9 @@ def extract_stability_boundaries(ims_results):
         V_planar.append(V_planar_i)
         V_dend.append(V_dend_i)
         G_out.append(G[i])
+
+    if not G_out:
+        raise EngineComputationError("IMS stability extraction found no finite positive stability branch.")
 
     return (
         np.array(G_out),

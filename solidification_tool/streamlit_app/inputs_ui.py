@@ -253,9 +253,12 @@ def render_sidebar():
         with st.expander("Engine Settings", expanded=False):
             st.session_state.ims_sampling_mode = st.selectbox(
                 "IMS sampling mode",
-                ["legacy", "adaptive"],
-                index=["legacy", "adaptive"].index(
-                    st.session_state.get("ims_sampling_mode", defaults.ims_sampling_mode)
+                ["adaptive", "sweep"],
+                format_func=lambda value: "Adaptive Pe mesh" if value == "adaptive" else "Sweep Pe grid",
+                index=["adaptive", "sweep"].index(
+                    EngineSettings(
+                        ims_sampling_mode=st.session_state.get("ims_sampling_mode", defaults.ims_sampling_mode)
+                    ).ims_sampling_mode
                 ),
             )
 

@@ -1,5 +1,11 @@
 import numpy as np
 from solidification_tool.core.settings import EngineSettings
+from solidification_tool.core.validation import EngineComputationError
+
+
+def _require_positive_finite(name, value):
+    if not np.isfinite(value) or value <= 0:
+        raise EngineComputationError(f"PDAS requires {name} to be positive and finite.")
 
 
 def solve_pdas(inputs, V_min, V_max, fit_ims_results, settings: EngineSettings | None = None):
@@ -20,6 +26,12 @@ def solve_pdas(inputs, V_min, V_max, fit_ims_results, settings: EngineSettings |
     beta1 = fit_ims_results["beta1"]
     alpha2 = fit_ims_results["alpha2"]
     beta2 = fit_ims_results["beta2"]
+    _require_positive_finite("V_min", V_min)
+    _require_positive_finite("V_max", V_max)
+    if V_min >= V_max:
+        raise EngineComputationError("PDAS requires V_min to be less than V_max.")
+    _require_positive_finite("alpha1", alpha1)
+    _require_positive_finite("alpha2", alpha2)
 
     # --------------------------------------------------
     # Velocity grid (physically bounded)
@@ -37,6 +49,8 @@ def solve_pdas(inputs, V_min, V_max, fit_ims_results, settings: EngineSettings |
 
     # Physical validity
     valid = DeltaT_eff > 0
+    if not np.any(valid):
+        raise EngineComputationError("PDAS found no velocity points with positive effective freezing range.")
 
     # --------------------------------------------------
     # Store results

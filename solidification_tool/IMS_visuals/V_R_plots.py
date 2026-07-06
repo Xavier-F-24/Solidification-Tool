@@ -4,13 +4,6 @@ import numpy as np
 from solidification_tool.io_utils.monotonic import monotonic_display_xy
 
 
-def _solute_undercooling_at_g(solute_undercooling, idx):
-    values = np.asarray(solute_undercooling)
-    if values.ndim == 3:
-        return values[idx]
-    return values
-
-
 def spacing_to_color(spacings):
     unique = sorted(set(spacings))
 
@@ -23,14 +16,13 @@ def plot_V_R(ims_results, Wanted_G, fig_size, plot_range = False, G_range = (1e-
     # --------------------------------------------------
     # Unpack inputs
     # --------------------------------------------------
-    G = ims_results["G"]
-    V_minus = ims_results["V-"]
-    V_plus = ims_results["V+"]
-    R_minus = ims_results["R-"]
-    R_plus = ims_results["R+"]
-    Total_undercooling = ims_results["Total_undercooling"]
-    Solute_undercooling = ims_results["Solute_undercooling"]
-    Curvature_undercooling = ims_results["Curvature_undercooling"]
+    G = ims_results.G
+    V_minus = ims_results.V_minus
+    V_plus = ims_results.V_plus
+    R_minus = ims_results.R_minus
+    R_plus = ims_results.R_plus
+    Total_undercooling = ims_results.Total_undercooling
+    Curvature_undercooling = ims_results.Curvature_undercooling
 
     idx = np.argmin(np.abs(G - Wanted_G))
 
@@ -70,7 +62,7 @@ def plot_V_R(ims_results, Wanted_G, fig_size, plot_range = False, G_range = (1e-
     # Plotting V versus solute undercooling
     # --------------------------------------------------
     fig_cool, ax2 = plt.subplots(figsize = fig_size)
-    solute_undercooling_at_g = _solute_undercooling_at_g(Solute_undercooling, idx)
+    solute_undercooling_at_g = ims_results.solute_undercooling_at_g(idx)
     solute_colors = spacing_to_color(np.linspace(0,len(solute_undercooling_at_g)-1, len(solute_undercooling_at_g)))
 
     for j in range(len(solute_undercooling_at_g)):

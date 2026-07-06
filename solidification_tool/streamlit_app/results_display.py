@@ -102,18 +102,18 @@ def display_physics_tab(results_dict):
 
     with st.expander("IMS Diagnostics", expanded=True):
         ims = results.ims
-        stable_region = ims["Stable"]
-        g_values = ims["G"]
+        stable_region = ims.Stable
+        g_values = ims.G
         valid_g_mask = np.any(stable_region, axis=1)
         valid_count = int(np.count_nonzero(stable_region))
 
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("Sampling mode", ims.get("sampling_mode", "legacy"))
+            st.metric("Sampling mode", ims.sampling_mode)
         with col2:
             st.metric("Stable points", f"{valid_count:,}")
         with col3:
-            st.metric("Pe shape", str(ims["Pe"].shape))
+            st.metric("Pe shape", str(ims.Pe.shape))
         with col4:
             st.metric("Valid G rows", f"{np.count_nonzero(valid_g_mask)}/{len(g_values)}")
 
@@ -122,11 +122,11 @@ def display_physics_tab(results_dict):
             g_max = g_values[valid_g_mask][-1]
             st.write(f"**Stable G coverage:** {g_min:.2e} to {g_max:.2e} K/m")
 
-        r_range = _finite_range(results.ims["R+"])
+        r_range = _finite_range(results.ims.R_plus)
         if r_range:
             st.write(f"**Tip radius R+ range:** {r_range[0]:.2e} to {r_range[1]:.2e} m")
 
-        pe_bounds = ims.get("Pe_bounds")
+        pe_bounds = ims.Pe_bounds
         if pe_bounds is not None:
             finite_bounds = pe_bounds[np.isfinite(pe_bounds[:, 0])]
             if len(finite_bounds) > 0:
@@ -217,21 +217,21 @@ def display_data_tab(results_dict):
         st.subheader("IMS Model Results")
 
         ims = results.ims
-        st.write(f"**Sampling mode:** {ims.get('sampling_mode', 'legacy')}")
-        st.write(f"**G values:** {ims['G'].shape[0]} points")
-        st.write(f"**Peclet number Pe:** {ims['Pe'].shape}")
-        st.write(f"**Tip radius R+:** {ims['R+'].shape}")
-        st.write(f"**Dendrite velocity V+:** {ims['V+'].shape}")
-        st.write(f"**Total undercooling:** {ims['Total_undercooling'].shape}")
-        st.write(f"**Stable points:** {int(np.count_nonzero(ims['Stable'])):,}")
+        st.write(f"**Sampling mode:** {ims.sampling_mode}")
+        st.write(f"**G values:** {ims.G.shape[0]} points")
+        st.write(f"**Peclet number Pe:** {ims.Pe.shape}")
+        st.write(f"**Tip radius R+:** {ims.R_plus.shape}")
+        st.write(f"**Dendrite velocity V+:** {ims.V_plus.shape}")
+        st.write(f"**Total undercooling:** {ims.Total_undercooling.shape}")
+        st.write(f"**Stable points:** {int(np.count_nonzero(ims.Stable)):,}")
 
         col1, col2 = st.columns(2)
         with col1:
             st.write("**G values sample:**")
-            st.write(ims["G"][:10])
+            st.write(ims.G[:10])
         with col2:
             st.write("**Pe range:**")
-            st.write(f"Min: {np.nanmin(ims['Pe']):.2e}, Max: {np.nanmax(ims['Pe']):.2e}")
+            st.write(f"Min: {np.nanmin(ims.Pe):.2e}, Max: {np.nanmax(ims.Pe):.2e}")
 
     with tab3:
         st.subheader("PDAS & SDAS Data")

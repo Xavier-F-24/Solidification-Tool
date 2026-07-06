@@ -14,6 +14,12 @@ class StreamlitEngineSettingsTests(unittest.TestCase):
         settings = create_engine_settings_from_state({})
 
         self.assertEqual(settings, EngineSettings())
+        self.assertEqual(settings.ims_sampling_mode, "adaptive")
+
+    def test_legacy_state_normalizes_to_sweep(self):
+        settings = create_engine_settings_from_state({"ims_sampling_mode": "legacy"})
+
+        self.assertEqual(settings.ims_sampling_mode, "sweep")
 
     def test_adaptive_state_builds_adaptive_engine_settings(self):
         settings = create_engine_settings_from_state(
@@ -44,11 +50,11 @@ class StreamlitEngineSettingsTests(unittest.TestCase):
 
     def test_cache_payload_changes_when_engine_settings_change(self):
         inputs_payload = get_default_inputs().to_dict()
-        legacy = settings_to_payload(EngineSettings())
+        sweep = settings_to_payload(EngineSettings(ims_sampling_mode="sweep"))
         adaptive = settings_to_payload(EngineSettings(ims_sampling_mode="adaptive"))
 
         self.assertNotEqual(
-            hash_simulation_payload(inputs_payload, 1e5, legacy),
+            hash_simulation_payload(inputs_payload, 1e5, sweep),
             hash_simulation_payload(inputs_payload, 1e5, adaptive),
         )
 

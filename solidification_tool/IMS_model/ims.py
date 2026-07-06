@@ -28,8 +28,8 @@ def _compute_solutal_stability_term(C_0, k, m, Pe):
     return c_l_star, s_term
 
 
-def _legacy_peclet_grid(D, settings: EngineSettings):
-    """Construct the original solute-scaled Peclet grid."""
+def _sweep_peclet_grid(D, settings: EngineSettings):
+    """Construct a global solute-scaled Peclet sweep grid."""
     p_base = np.logspace(settings.ims_pe_min_exp, settings.ims_pe_max_exp, settings.ims_pe_count)
     d_ref = D[0, 0]
     scale = d_ref / D
@@ -95,11 +95,11 @@ def _adaptive_peclet_grid(C_0, k, m, D, Gamma, G_values, settings: EngineSetting
     Construct a per-gradient Peclet grid from stability-discriminant windows.
 
     The marginal-stability quadratic has real roots only when
-    B(Pe)^2 - 4*A*G > 0. Adaptive mode probes that discriminant on the legacy
+    B(Pe)^2 - 4*A*G > 0. Adaptive mode probes that discriminant on the sweep
     grid, refines the valid-window edges with scalar root solves, then resamples
     each gradient row while preserving rectangular arrays for downstream consumers.
     """
-    p_probe, pe_probe, _ = _legacy_peclet_grid(D, settings)
+    p_probe, pe_probe, _ = _sweep_peclet_grid(D, settings)
     _, s_probe = _compute_solutal_stability_term(C_0, k, m, pe_probe)
 
     a_term = 4 * np.pi**2 * Gamma
@@ -165,7 +165,7 @@ def solve_ims(inputs, settings: EngineSettings | None = None):
     if settings.ims_sampling_mode == "adaptive":
         p_base, Pe, pe_bounds = _adaptive_peclet_grid(C_0, k, m, D, gamma, g_values, settings)
     else:
-        p_base, Pe, pe_bounds = _legacy_peclet_grid(D, settings)
+        p_base, Pe, pe_bounds = _sweep_peclet_grid(D, settings)
 
     c_l_star, s_term = _compute_solutal_stability_term(C_0, k, m, Pe)
 

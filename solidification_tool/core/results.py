@@ -86,7 +86,9 @@ class ImsResults(Mapping):
     @classmethod
     def from_dict(cls, values: Mapping):
         normalized = dict(values)
-        normalized.setdefault("sampling_mode", "legacy")
+        if normalized.get("sampling_mode") == "legacy":
+            normalized["sampling_mode"] = "sweep"
+        normalized.setdefault("sampling_mode", "sweep")
         normalized.setdefault("P_base", np.asarray(normalized["Pe"])[0])
         normalized.setdefault("Pe_bounds", None)
         normalized.setdefault("Pe_bounds_source", None)
