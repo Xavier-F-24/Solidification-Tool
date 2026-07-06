@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
 from solidification_tool.core.inputs import SolidificationInputs
+from solidification_tool.core.results import ImsResults
 from solidification_tool.core.settings import EngineSettings
 from solidification_tool.core.validation import EngineComputationError, EngineInputError
 

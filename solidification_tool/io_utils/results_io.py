@@ -3,7 +3,7 @@ from pathlib import Path
 
 import numpy as np
 
-from solidification_tool.core.results import ImsPowerLawFit, SimulationResults, StabilityBoundaries
+from solidification_tool.core.results import ImsPowerLawFit, ImsResults, SimulationResults, StabilityBoundaries
 
 
 def _plain_mapping(value):
@@ -36,7 +36,7 @@ def save_results(results: SimulationResults, run_dir):
         metadata=results.metadata,
         V=results.V,
         G=results.G,
-        ims=results.ims,
+        ims=_plain_mapping(results.ims),
         fit_ims=_plain_mapping(results.fit_ims),
         stability=_plain_mapping(results.stability),
         pdas=results.pdas,
@@ -66,8 +66,11 @@ def load_results(filepath):
         else _load_optional_json(filepath.with_name("metadata.json"), {})
     )
     fit_ims = _load_npz_item(data, "fit_ims")
+    ims = _load_npz_item(data, "ims")
     stability = _load_npz_item(data, "stability")
 
+    if isinstance(ims, dict):
+        ims = ImsResults.from_dict(ims)
     if isinstance(fit_ims, dict):
         fit_ims = ImsPowerLawFit(**fit_ims)
     if isinstance(stability, dict):
@@ -78,7 +81,7 @@ def load_results(filepath):
         metadata=metadata,
         V=data["V"],
         G=data["G"],
-        ims=_load_npz_item(data, "ims"),
+        ims=ims,
         fit_ims=fit_ims,
         stability=stability,
         pdas=_load_npz_item(data, "pdas"),
@@ -86,4 +89,3 @@ def load_results(filepath):
         cet=_load_npz_item(data, "cet"),
         phi_list=list(_load_npz_item(data, "phi_list")),
     )
-

@@ -6,6 +6,7 @@ import numpy as np
 from scipy.optimize import brentq
 
 from solidification_tool.IMS_model.ivantsov import Ivantsov
+from solidification_tool.core.results import ImsResults
 from solidification_tool.core.settings import EngineSettings
 from solidification_tool.core.validation import EngineComputationError
 
@@ -211,19 +212,19 @@ def solve_ims(inputs, settings: EngineSettings | None = None):
         solute_undercooling[0] if solute_undercooling.shape[0] == 1 else solute_undercooling
     )
 
-    return {
-        "G": g_values,
-        "Pe": pe_out,
-        "P_base": p_base,
-        "Pe_bounds": pe_bounds,
-        "Pe_bounds_source": "refined_discriminant_roots" if settings.ims_sampling_mode == "adaptive" else None,
-        "sampling_mode": settings.ims_sampling_mode,
-        "R+": R_plus,
-        "R-": R_minus,
-        "V+": V_plus,
-        "V-": V_minus,
-        "Total_undercooling": total_undercooling,
-        "Stable": valid[:, 0, :],
-        "Solute_undercooling": solute_undercooling_out,
-        "Curvature_undercooling": curvature_undercooling,
-    }
+    return ImsResults(
+        G=g_values,
+        Pe=pe_out,
+        P_base=p_base,
+        Pe_bounds=pe_bounds,
+        Pe_bounds_source="refined_discriminant_roots" if settings.ims_sampling_mode == "adaptive" else None,
+        sampling_mode=settings.ims_sampling_mode,
+        R_plus=R_plus,
+        R_minus=R_minus,
+        V_plus=V_plus,
+        V_minus=V_minus,
+        Total_undercooling=total_undercooling,
+        Stable=valid[:, 0, :],
+        Solute_undercooling=solute_undercooling_out,
+        Curvature_undercooling=curvature_undercooling,
+    )

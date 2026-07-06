@@ -8,6 +8,7 @@ from solidification_tool.app_api import (
     EngineComputationError,
     EngineSettings,
     EngineInputError,
+    ImsResults,
     get_default_inputs,
     load_run,
     run_model,
@@ -72,6 +73,7 @@ class EngineRegressionTests(unittest.TestCase):
         results = self.results
 
         self.assertIsInstance(results, SimulationResults)
+        self.assertIsInstance(results.ims, ImsResults)
         self.assertIsInstance(results.fit_ims, ImsPowerLawFit)
         self.assertIsInstance(results.stability, StabilityBoundaries)
 
@@ -107,6 +109,8 @@ class EngineRegressionTests(unittest.TestCase):
         self.assertEqual(results.ims["R+"].shape, (100, 3000))
         self.assertEqual(results.ims["V+"].shape, (100, 3, 3000))
         self.assertEqual(results.ims["sampling_mode"], "legacy")
+        self.assertIs(results.ims["R+"], results.ims.R_plus)
+        self.assertEqual(set(results.ims.keys()), set(results.ims.to_dict().keys()))
         self.assertEqual(results.ims["P_base"].shape, (3000,))
         self.assertIsNone(results.ims["Pe_bounds"])
         self.assertIsNone(results.ims["Pe_bounds_source"])
@@ -162,6 +166,7 @@ class EngineRegressionTests(unittest.TestCase):
             loaded = load_run(f"{tmp_dir}/run.npz")
 
         self.assertIsInstance(loaded, SimulationResults)
+        self.assertIsInstance(loaded.ims, ImsResults)
         self.assertIsInstance(loaded.fit_ims, ImsPowerLawFit)
         self.assertIsInstance(loaded.stability, StabilityBoundaries)
         self.assertEqual(self.results.V.shape, loaded.V.shape)
